@@ -1,0 +1,517 @@
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { authHeaders, authFormHeaders, getStatus } from "./api";
+import Navbar from "./Navbar";
+
+const CATEGORIES = ["Tous", "Techniciens", "Clients", "Questions", "Conseils", "Annonces"];
+
+function PostCard({ post, user, isSelected, liked, commentsOpen, commentInput, onSelect, onLike, onToggleComments, onCommentChange, onCommentSubmit, onDelete, onLogin, timeAgo, avatarBg }) {
+  return (
+    <div
+      onClick={onSelect}
+      className={`relative flex-shrink-0 w-[280px] flex flex-col justify-between rounded-xl border p-4 cursor-pointer transition-all duration-300
+        ${isSelected
+          ? "border-violet-500/50 bg-violet-500/8 shadow-[0_0_0_1px_rgba(139,92,246,0.25)]"
+          : "border-white/[0.08] bg-white/[0.03] hover:border-violet-500/25 hover:bg-white/[0.05]"
+        }`}
+    >
+      {/* Contenu */}
+      <p className="text-sm text-white/70 leading-relaxed line-clamp-3 mb-3">{post.contenu}</p>
+
+      {post.photo && (
+        <img src={post.photo} alt="post" className="w-full h-24 object-cover rounded-lg mb-3 opacity-80" />
+      )}
+
+      {/* Footer */}
+      <div className="mt-auto">
+        <div className="flex items-center gap-3 mb-3">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0 ${avatarBg(post.role)}`}>
+            {post.auteur?.slice(0, 2).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white truncate">{post.auteur}</p>
+            <p className="text-[11px] text-white/30">{timeAgo(post.createdAt)}</p>
+          </div>
+          {user?.username === post.auteur && (
+            <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="text-xs text-white/20 hover:text-red-400 transition-colors p-1">✕</button>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-3 pt-2 border-t border-white/[0.06]" onClick={e => e.stopPropagation()}>
+          <button onClick={onLike}
+            className={`flex items-center gap-1 text-xs transition-all ${liked ? "text-pink-400" : "text-white/30 hover:text-pink-400"}`}>
+            <span>{liked ? "❤️" : "🤍"}</span>
+            <span>{post.likes.length}</span>
+          </button>
+          <button onClick={onToggleComments}
+            className="flex items-center gap-1 text-xs text-white/30 hover:text-violet-400 transition-colors">
+            <span>💬</span>
+            <span>{post.commentaires.length}</span>
+          </button>
+          <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium ${post.role === "technicien" ? "bg-blue-500/15 text-blue-300" : "bg-violet-500/15 text-violet-300"}`}>
+            {post.role}
+          </span>
+        </div>
+
+        {/* Commentaires */}
+        {commentsOpen && (
+          <div className="mt-3 border-t border-white/[0.06] pt-3" onClick={e => e.stopPropagation()}>
+            {post.commentaires.slice(-2).map((c, ci) => (
+              <div key={ci} className="flex gap-2 mb-2">
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-black flex-shrink-0 ${avatarBg(c.role)}`}>
+                  {c.auteur?.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 px-2 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+                  <span className="text-[10px] font-semibold text-white/70">{c.auteur} </span>
+                  <span className="text-[10px] text-white/50">{c.contenu}</span>
+                </div>
+              </div>
+            ))}
+            {user ? (
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  placeholder="Commenter..."
+                  value={commentInput}
+                  onChange={e => onCommentChange(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && onCommentSubmit()}
+                  className="flex-1 px-3 py-1.5 rounded-lg text-xs text-white placeholder-white/25 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:border-violet-500/50 transition-all"
+                />
+                <button onClick={onCommentSubmit}
+                  className="px-2.5 py-1.5 rounded-lg bg-violet-600/80 hover:bg-violet-600 transition-colors text-xs">→</button>
+              </div>
+            ) : (
+              <p className="text-[10px] text-white/30 text-center mt-1">
+                <span onClick={onLogin} className="text-violet-400 cursor-pointer">Connectez-vous</span> pour commenter
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function Forum() {
+  const navigate = useNavigate();
+  const [mounted, setMounted] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [contenu, setContenu] = useState("");
+  const [photo, setPhoto] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [openComments, setOpenComments] = useState({});
+  const [commentInputs, setCommentInputs] = useState({});
+  const [activeCategory, setActiveCategory] = useState("Tous");
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [authorProfile, setAuthorProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [postError, setPostError] = useState("");
+  const fileRef = useRef();
+
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+
+  useEffect(() => {
+    setTimeout(() => setMounted(true), 50);
+    fetchPosts();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedPost) return;
+    setLoadingProfile(true);
+    setAuthorProfile(null);
+    fetch(`/api/users/${selectedPost.auteur}`)
+      .then(r => r.json())
+      .then(data => setAuthorProfile(data))
+      .catch(() => {})
+      .finally(() => setLoadingProfile(false));
+  }, [selectedPost]);
+
+  const fetchPosts = async () => {
+    setLoadingPosts(true);
+    try {
+      const res = await fetch("/api/posts");
+      const data = await res.json();
+      setPosts(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  const handlePhoto = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhoto(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const handlePost = async () => {
+    if (!contenu.trim()) return;
+    setLoading(true);
+    setPostError("");
+    try {
+      const formData = new FormData();
+      formData.append("contenu", contenu);
+      formData.append("auteur", user?.username || "Anonyme");
+      formData.append("role", user?.role || "client");
+      if (photo) formData.append("photo", photo);
+      const res = await fetch("/api/posts", { method: "POST", headers: authFormHeaders(), body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        setContenu("");
+        setPhoto(null);
+        setPreview(null);
+        fetchPosts();
+      } else if (res.status === 401) {
+        setPostError("Session expirée. Reconnectez-vous.");
+        setTimeout(() => navigate("/login"), 1500);
+      } else {
+        setPostError(data.message || "Erreur lors de la publication.");
+      }
+    } catch (err) {
+      setPostError("Erreur de connexion au serveur.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLike = async (id) => {
+    if (!user) return navigate("/login");
+    try {
+      const res = await fetch(`/api/posts/${id}/like`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user.username }),
+      });
+      const data = await res.json();
+      setPosts(prev => prev.map(p => p._id === id ? { ...p, likes: data.likes } : p));
+      if (selectedPost?._id === id) setSelectedPost(p => ({ ...p, likes: data.likes }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleComment = async (id) => {
+    const contenuComment = commentInputs[id]?.trim();
+    if (!contenuComment || !user) return;
+    try {
+      const res = await fetch(`/api/posts/${id}/commentaires`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ contenu: contenuComment, auteur: user.username, role: user.role }),
+      });
+      const data = await res.json();
+      const updated = prev => prev.map(p =>
+        p._id === id ? { ...p, commentaires: [...p.commentaires, data.commentaire] } : p
+      );
+      setPosts(updated);
+      if (selectedPost?._id === id)
+        setSelectedPost(p => ({ ...p, commentaires: [...p.commentaires, data.commentaire] }));
+      setCommentInputs(prev => ({ ...prev, [id]: "" }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    await fetch(`/api/posts/${id}`, { method: "DELETE", headers: authHeaders() });
+    setPosts(prev => prev.filter(p => p._id !== id));
+    if (selectedPost?._id === id) setSelectedPost(null);
+  };
+
+  const toggleComments = (e, id) => {
+    e.stopPropagation();
+    setOpenComments(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const timeAgo = (date) => {
+    const diff = Math.floor((new Date() - new Date(date)) / 1000);
+    if (diff < 60) return "à l'instant";
+    if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`;
+    if (diff < 86400) return `il y a ${Math.floor(diff / 3600)} h`;
+    return `il y a ${Math.floor(diff / 86400)} j`;
+  };
+
+  const filteredPosts = posts.filter(p => {
+    if (activeCategory === "Tous") return true;
+    if (activeCategory === "Techniciens") return p.role === "technicien";
+    if (activeCategory === "Clients") return p.role === "client";
+    return true;
+  });
+
+  const avatarBg = (role) =>
+    role === "technicien"
+      ? "bg-gradient-to-br from-blue-600 to-violet-600"
+      : "bg-gradient-to-br from-violet-600 to-pink-600";
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0f] text-white flex flex-col">
+      <style>{`
+        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        @keyframes scroll-ltr { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+        @keyframes scroll-rtl { from { transform: translateX(-100%); } to { transform: translateX(100vw); } }
+        .fade-up { animation: fadeUp 0.45s cubic-bezier(.22,1,.36,1) forwards; }
+        .fade-in { animation: fadeIn 0.3s ease forwards; }
+        .spinner { animation: spin 0.75s linear infinite; }
+        .scroll-ltr { animation: scroll-ltr linear infinite; display:flex; gap:1rem; width:max-content; }
+        .scroll-rtl { animation: scroll-rtl linear infinite; display:flex; gap:1rem; width:max-content; }
+        .marquee-wrap:hover .scroll-ltr,
+        .marquee-wrap:hover .scroll-rtl { animation-play-state: paused; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 4px; }
+      `}</style>
+
+      <div className="fixed inset-0 pointer-events-none z-0 [background-image:linear-gradient(rgba(139,92,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.05)_1px,transparent_1px)] [background-size:60px_60px]" />
+      <div className="fixed top-[-100px] right-[-80px] w-[400px] h-[400px] rounded-full bg-purple-600/15 blur-[100px] pointer-events-none z-0" />
+
+      <Navbar />
+
+      {/* ── BODY 3 colonnes ── */}
+      <div className="relative z-10 flex flex-1 max-w-7xl mx-auto w-full px-4 gap-6 py-8">
+
+        {/* ── SIDEBAR GAUCHE ── */}
+        <aside className={`w-56 flex-shrink-0 flex flex-col gap-2 ${mounted ? "fade-in" : "opacity-0"}`}>
+          <p className="text-[10px] font-bold tracking-widest text-white/25 uppercase px-3 mb-1">Catégories</p>
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-left
+                ${activeCategory === cat
+                  ? "bg-violet-600/20 text-violet-300 border border-violet-500/30"
+                  : "text-white/40 hover:text-white/80 hover:bg-white/[0.04]"
+                }`}
+            >
+              <span>{cat}</span>
+              {activeCategory === cat && (
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+              )}
+            </button>
+          ))}
+
+          <div className="mt-4 h-px bg-white/[0.06]" />
+          <p className="text-[10px] font-bold tracking-widest text-white/25 uppercase px-3 mt-3 mb-1">Navigation</p>
+          <button onClick={() => navigate("/")} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-white/40 hover:text-white/80 hover:bg-white/[0.04] transition-all">
+            <span>🏠</span><span>Accueil</span>
+          </button>
+          <button onClick={() => navigate("/annonces")} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-white/40 hover:text-white/80 hover:bg-white/[0.04] transition-all">
+            <span>📋</span><span>Annonces</span>
+          </button>
+          <button onClick={() => navigate("/messages")} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-white/40 hover:text-white/80 hover:bg-white/[0.04] transition-all">
+            <span>📝</span><span>Messages</span>
+          </button>
+        </aside>
+
+        {/* ── CENTRE : posts ── */}
+        <main className="flex-1 min-w-0 flex flex-col gap-4">
+
+          {/* Composer */}
+          {user ? (
+            <div className={`p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] ${mounted ? "fade-up" : "opacity-0"}`}>
+              <div className="flex gap-3 mb-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0 ${avatarBg(user.role)}`}>
+                  {user.username.slice(0, 2).toUpperCase()}
+                </div>
+                <textarea
+                  value={contenu}
+                  onChange={(e) => setContenu(e.target.value)}
+                  placeholder="Quoi de neuf ?"
+                  rows={2}
+                  className="flex-1 px-4 py-3 rounded-xl text-sm text-white placeholder-white/25 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15 transition-all resize-none"
+                />
+              </div>
+              {preview && (
+                <div className="relative mb-3">
+                  <img src={preview} alt="preview" className="w-full max-h-48 object-cover rounded-xl opacity-80" />
+                  <button onClick={() => { setPhoto(null); setPreview(null); }} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white/70 hover:text-white text-xs">✕</button>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <button onClick={() => fileRef.current.click()} className="flex items-center gap-2 text-sm text-white/40 hover:text-violet-400 transition-colors">
+                  📷 <span>Photo</span>
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
+                <button
+                  onClick={handlePost}
+                  disabled={loading || !contenu.trim()}
+                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-violet-700 to-purple-500 hover:from-violet-600 hover:to-purple-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm font-semibold"
+                >
+                  {loading ? <span className="spinner w-4 h-4 border-2 border-white/30 border-t-white rounded-full inline-block" /> : "Publier →"}
+                </button>
+              </div>
+              {postError && (
+                <p className="text-xs text-red-400 mt-2 text-right">{postError}</p>
+              )}
+            </div>
+          ) : (
+            <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-center">
+              <p className="text-white/40 text-sm mb-3">Connectez-vous pour publier</p>
+              <button onClick={() => navigate("/login")} className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">Se connecter</button>
+            </div>
+          )}
+
+          {/* Posts en marquee */}
+          {loadingPosts ? (
+            <div className="flex justify-center py-20">
+              <span className="spinner w-8 h-8 border-2 border-white/20 border-t-violet-500 rounded-full inline-block" />
+            </div>
+          ) : filteredPosts.length === 0 ? (
+            <div className="text-center py-20 text-white/30">
+              <p className="text-4xl mb-3">💬</p>
+              <p className="text-lg font-medium">Aucune publication dans cette catégorie</p>
+            </div>
+          ) : (() => {
+            const makeCard = (post, prefix) => (
+              <PostCard
+                key={prefix}
+                post={post}
+                user={user}
+                isSelected={selectedPost?._id === post._id}
+                liked={user && post.likes.includes(user.username)}
+                commentsOpen={openComments[post._id]}
+                commentInput={commentInputs[post._id] || ""}
+                onSelect={() => setSelectedPost(selectedPost?._id === post._id ? null : post)}
+                onLike={() => handleLike(post._id)}
+                onToggleComments={(e) => toggleComments(e, post._id)}
+                onCommentChange={(v) => setCommentInputs(prev => ({ ...prev, [post._id]: v }))}
+                onCommentSubmit={() => handleComment(post._id)}
+                onDelete={() => handleDelete(post._id)}
+                onLogin={() => navigate("/login")}
+                timeAgo={timeAgo}
+                avatarBg={avatarBg}
+              />
+            );
+
+            // Durée proportionnelle au nombre de posts (plus il y en a, plus c'est lent)
+            const duration = `${filteredPosts.length * 4 + 6}s`;
+
+            return (
+              <div className="relative overflow-hidden marquee-wrap -mx-4">
+                <div className="absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#0a0a0f] to-transparent pointer-events-none" />
+                <div className="absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#0a0a0f] to-transparent pointer-events-none" />
+
+                {/* Ligne 1 → gauche */}
+                <div className="py-2 overflow-hidden">
+                  <div className="scroll-ltr" style={{ animationDuration: duration }}>
+                    {filteredPosts.map((p, i) => makeCard(p, `a-${i}`))}
+                  </div>
+                </div>
+
+                {/* Ligne 2 → droite */}
+                <div className="py-2 overflow-hidden">
+                  <div className="scroll-rtl" style={{ animationDuration: duration }}>
+                    {filteredPosts.map((p, i) => makeCard(p, `b-${i}`))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </main>
+
+        {/* ── SIDEBAR DROITE : profil auteur ── */}
+        <aside className={`w-64 flex-shrink-0 ${mounted ? "fade-in" : "opacity-0"}`}>
+          {selectedPost ? (
+            <div className="sticky top-24 rounded-2xl bg-white/[0.03] border border-white/[0.08] overflow-hidden">
+              {loadingProfile ? (
+                <div className="flex justify-center py-12">
+                  <span className="spinner w-6 h-6 border-2 border-white/20 border-t-violet-500 rounded-full inline-block" />
+                </div>
+              ) : authorProfile ? (
+                <>
+                  <div className="px-5 pt-5 pb-5">
+                    {/* Avatar + close */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black overflow-hidden ${avatarBg(authorProfile.user?.role)}`}>
+                        {authorProfile.user?.photo
+                          ? <img src={`${authorProfile.user.photo}`} alt="" className="w-full h-full object-cover" />
+                          : authorProfile.user?.username?.slice(0, 2).toUpperCase()
+                        }
+                      </div>
+                      <button
+                        onClick={() => setSelectedPost(null)}
+                        className="w-6 h-6 rounded-full bg-white/[0.06] flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 text-xs transition-colors"
+                      >✕</button>
+                    </div>
+
+                    {(() => { const s = getStatus(authorProfile.user?.lastSeen); return (
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <span className={`w-2 h-2 rounded-full ${s.online ? "bg-green-400 animate-pulse" : "bg-white/20"}`} />
+                        <span className={`text-[10px] ${s.online ? "text-green-400" : "text-white/30"}`}>{s.label}</span>
+                      </div>
+                    ); })()}
+                    <p className="font-black text-base mb-1">{authorProfile.user?.username}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${authorProfile.user?.role === "technicien" ? "bg-blue-500/15 text-blue-300" : "bg-violet-500/15 text-violet-300"}`}>
+                        {authorProfile.user?.role}
+                      </span>
+                      {authorProfile.badge && (
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border
+                          ${authorProfile.badge.color === "yellow" ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" :
+                            authorProfile.badge.color === "green" ? "bg-green-500/10 text-green-400 border-green-500/20" :
+                            "bg-blue-500/10 text-blue-400 border-blue-500/20"}`}>
+                          {authorProfile.badge.icon} {authorProfile.badge.label}
+                        </span>
+                      )}
+                    </div>
+
+                    {authorProfile.user?.bio && (
+                      <p className="text-xs text-white/40 mt-2 leading-relaxed">{authorProfile.user.bio}</p>
+                    )}
+
+                    <div className="h-px bg-white/[0.06] my-3" />
+
+                    {/* Stats */}
+                    <div className="flex gap-3 mb-3">
+                      <div className="flex-1 text-center">
+                        <p className="text-lg font-black text-violet-400">{authorProfile.annonces?.length || 0}</p>
+                        <p className="text-[10px] text-white/30">Annonces</p>
+                      </div>
+                      <div className="w-px bg-white/[0.06]" />
+                      <div className="flex-1 text-center">
+                        <p className={`text-lg font-black ${authorProfile.moyenne ? "text-yellow-400" : "text-white/20"}`}>
+                          {authorProfile.moyenne ? `★ ${authorProfile.moyenne}` : "—"}
+                        </p>
+                        <p className="text-[10px] text-white/30">Note</p>
+                      </div>
+                      <div className="w-px bg-white/[0.06]" />
+                      <div className="flex-1 text-center">
+                        <p className={`text-lg font-black ${authorProfile.totalNotes ? "text-pink-400" : "text-white/20"}`}>
+                          {authorProfile.totalNotes || 0}
+                        </p>
+                        <p className="text-[10px] text-white/30">Avis</p>
+                      </div>
+                    </div>
+
+                    {authorProfile.user?.ville && (
+                      <p className="text-xs text-white/30 mb-3">📍 {authorProfile.user.ville}</p>
+                    )}
+
+                    <button
+                      onClick={() => navigate(`/profil/${authorProfile.user?.username}`)}
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-700 to-purple-500 hover:from-violet-600 hover:to-purple-400 hover:-translate-y-0.5 transition-all duration-200"
+                    >
+                      Voir le profil →
+                    </button>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          ) : (
+            <div className="sticky top-24 rounded-2xl bg-white/[0.03] border border-white/[0.08] p-6 text-center">
+              <p className="text-3xl mb-2">👆</p>
+              <p className="text-sm text-white/30">Cliquez sur une publication pour voir le profil de son auteur</p>
+            </div>
+          )}
+        </aside>
+      </div>
+    </div>
+  );
+}
