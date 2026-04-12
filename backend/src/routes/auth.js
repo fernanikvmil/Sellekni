@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import dns from "dns/promises";
 import { User } from "../models/Schemas.js";
+import { sendVerificationEmail } from "../library/mailer.js";
 
 const router = express.Router();
 
@@ -46,6 +47,8 @@ router.post("/signup", async (req, res) => {
 
     // create user and save it into db
     await User.create({ username, email, password: hashed, role, verificationToken, emailVerified: false, telephone: telephone || "", dateNaissance: dateNaissance || "", wilaya: wilaya || "", specialite: specialite || "" });
+
+    await sendVerificationEmail(email, verificationToken);
 
     res.status(201).json({ message: "Compte créé ! Vérifiez votre email pour l'activer." });
   } catch (err) {
