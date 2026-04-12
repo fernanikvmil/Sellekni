@@ -67,13 +67,20 @@ const notificationSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const messageSchema = new mongoose.Schema({
-  annonceId:    { type: String, required: true },
-  annonceTitre: { type: String },
-  de:           { type: String, required: true },
-  a:            { type: String, required: true },
-  message:      { type: String, required: true },
-  lu:           { type: Boolean, default: false },
-  reponses:     [{ de: String, message: String, createdAt: { type: Date, default: Date.now } }],
+  conversationId: { type: String, index: true },
+  annonceId:      { type: String },
+  annonceTitre:   { type: String },
+  de:             { type: String, required: true },
+  a:              { type: String, required: true },
+  message:        { type: String, required: true },
+  lu:             { type: Boolean, default: false },
+  type:           { type: String, default: "direct_message" },
+  reponses:       [{
+    de:        String,
+    message:   String,
+    lu:        { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+  }],
 }, { timestamps: true });
 
 export const User = mongoose.model("User", userSchema);
