@@ -30,7 +30,7 @@ router.post("/", requireAuth, upload.single("photo"), async (req, res) => {
         type: "forum",
         auteur,
         postId: post._id.toString(),
-        message: `${auteur} a publié dans le forum : "${contenu.slice(0, 60)}${contenu.length > 60 ? "…" : ""}"`,
+        message: `${auteur} a publié dans le forum`,
       })));
     }
     res.status(201).json({ message: "Post publié !", post });
@@ -55,6 +55,7 @@ router.post("/:id/like", async (req, res) => {
           auteur: username,
           postId: post._id.toString(),
           message: `${username} a aimé votre publication`,
+        lu: false,
         });
       }
     } else {
@@ -83,7 +84,7 @@ router.post("/:id/commentaires", requireAuth, async (req, res) => {
         type: "commentaire",
         auteur,
         postId: post._id.toString(),
-        message: `${auteur} a commenté : "${contenu.slice(0, 60)}${contenu.length > 60 ? "…" : ""}"`,
+        message: `${auteur} a commenté`,
       });
     }
     res.status(201).json({ commentaire });

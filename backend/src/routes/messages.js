@@ -12,7 +12,7 @@ router.post("/message-post", requireAuth, async (req, res) => {
       destinataire: a,
       type: "message",
       auteur: de,
-      message: `${de} vous a envoyé un message : "${message.slice(0, 60)}${message.length > 60 ? "…" : ""}"`,
+      message: `${de} vous a envoyé un message`,
     });
     res.status(201).json({ message: "Message envoyé !", msg });
   } catch (err) {
@@ -60,7 +60,7 @@ router.post("/:id/reponse", requireAuth, async (req, res) => {
       destinataire: recipient,
       type: "message",
       auteur: req.user.username,
-      message: `${req.user.username} a répondu à votre message`,
+      message: `${req.user.username} a répondu`,
     });
     res.json(msg);
   } catch (err) {

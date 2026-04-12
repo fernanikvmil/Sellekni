@@ -76,7 +76,7 @@ export default function Navbar() {
     };
 
     fetchUnread();
-    const id = setInterval(fetchUnread, 15000);
+    const id = setInterval(fetchUnread, 3000);
     return () => clearInterval(id);
   }, [user]);
 
