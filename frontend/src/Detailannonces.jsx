@@ -68,7 +68,7 @@ export default function AnnonceDetail() {
     if (!message.trim() || !user || sendingMsg !== "idle") return;
     setSendingMsg("pending");
     try {
-      await fetch("/api/messages", {
+      await fetch("/api/messages/message-post", {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({
@@ -150,7 +150,7 @@ export default function AnnonceDetail() {
         .spinner { animation: spin 0.75s linear infinite; }
 
         .stateful-btn { position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; width:100%; padding:12px 20px; border-radius:12px; font-weight:600; font-size:14px; cursor:pointer; border:none; transition:all 0.4s cubic-bezier(.22,1,.36,1); background: linear-gradient(135deg,#6d28d9,#7c3aed); color:#fff; box-shadow:0 4px 20px rgba(109,40,217,0.35); }
-        .stateful-btn:hover:not(:disabled) { background:linear-gradient(135deg,#5b21b6,#6d28d9); box-shadow:0 8px_30px rgba(109,40,217,0.5); transform:translateY(-1px); }
+        .stateful-btn:hover:not(:disabled) { background:linear-gradient(135deg,#5b21b6,#6d28d9); box-shadow:0 8px 30px rgba(109,40,217,0.5); transform:translateY(-1px); }
         .stateful-btn:disabled { cursor:not-allowed; }
         .stateful-btn .sb-content { display:flex; align-items:center; gap:8px; transition:all 0.3s ease; }
         .stateful-btn.pending .sb-content { opacity:0; transform:scale(0.8); }
@@ -269,7 +269,6 @@ export default function AnnonceDetail() {
             {/* Modifier + Supprimer */}
             {user?.username === annonce.auteur && (
               <div className="flex items-center justify-center gap-3">
-                {/* Bouton Modifier animé */}
                 <button className="edit-btn" onClick={openEdit}>
                   <svg viewBox="0 0 24 24" className="e-arr2" xmlns="http://www.w3.org/2000/svg">
                     <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"/>
@@ -281,7 +280,6 @@ export default function AnnonceDetail() {
                   </svg>
                 </button>
 
-                {/* Bouton Supprimer */}
                 <button
                   onClick={() => setShowDeleteModal(true)}
                   className="group relative w-[50px] h-[50px] hover:w-[140px] rounded-full hover:rounded-[50px] bg-red-500/10 border border-red-500/20 hover:bg-red-500 hover:border-red-500 flex items-center justify-center overflow-hidden transition-all duration-300 shadow-[0_0_20px_rgba(239,68,68,0.15)]"
@@ -425,7 +423,7 @@ export default function AnnonceDetail() {
         </div>
       )}
 
-      {/* Modal de confirmation suppression */}
+      {/* Modal suppression */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteModal(false)} />
@@ -436,17 +434,12 @@ export default function AnnonceDetail() {
             <h3 className="text-lg font-black text-center text-white mb-1">Supprimer {isService ? "le service" : "l'annonce"} ?</h3>
             <p className="text-white/40 text-sm text-center mb-6">Cette action est irréversible.</p>
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/60 bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] transition-all"
-              >
+              <button onClick={() => setShowDeleteModal(false)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white/60 bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] transition-all">
                 Annuler
               </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-500 disabled:opacity-60 transition-all"
-              >
+              <button onClick={handleDelete} disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-500 disabled:opacity-60 transition-all">
                 {deleting ? "Suppression..." : "Oui, supprimer"}
               </button>
             </div>
