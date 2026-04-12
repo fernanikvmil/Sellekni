@@ -48,7 +48,9 @@ router.post("/signup", async (req, res) => {
     // create user and save it into db
     await User.create({ username, email, password: hashed, role, verificationToken, emailVerified: false, telephone: telephone || "", dateNaissance: dateNaissance || "", wilaya: wilaya || "", specialite: specialite || "" });
 
-    await sendVerificationEmail(email, verificationToken);
+    // Envoi email (non bloquant)
+    sendVerificationEmail(email, verificationToken)
+      .catch(err => console.error("Erreur envoi email:", err.message));
 
     res.status(201).json({ message: "Compte créé ! Vérifiez votre email pour l'activer." });
   } catch (err) {
