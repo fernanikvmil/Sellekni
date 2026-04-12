@@ -2,95 +2,113 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { authHeaders, authFormHeaders, getStatus } from "./api";
 import Navbar from "./Navbar";
+import BorderGlow from "./BorderGlow";
 
 const CATEGORIES = ["Tous", "Techniciens", "Clients", "Questions", "Conseils", "Annonces"];
 
 function PostCard({ post, user, isSelected, liked, commentsOpen, commentInput, onSelect, onLike, onToggleComments, onCommentChange, onCommentSubmit, onDelete, onLogin, timeAgo, avatarBg }) {
   return (
+    <BorderGlow
+      edgeSensitivity={40}
+      glowColor="139 92 246"
+      backgroundColor="#060010"
+      borderRadius={0}
+      glowRadius={60}
+      glowIntensity={0.8}
+      colors={["#c084fc", "#1e1e2e", "#f472b6", "#1e1e2e", "#38bdf8"]}
+    >
     <div
       onClick={onSelect}
-      className={`relative flex-shrink-0 w-[280px] flex flex-col justify-between rounded-xl border p-4 cursor-pointer transition-all duration-300
-        ${isSelected
-          ? "border-violet-500/50 bg-violet-500/8 shadow-[0_0_0_1px_rgba(139,92,246,0.25)]"
-          : "border-white/[0.08] bg-white/[0.03] hover:border-violet-500/25 hover:bg-white/[0.05]"
-        }`}
+      className={`flex gap-3 px-4 py-4 cursor-pointer border-b border-white/[0.06] transition-colors duration-150
+        ${isSelected ? "bg-violet-500/5" : "hover:bg-white/[0.02]"}`}
     >
+      {/* Avatar */}
+      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0 ${avatarBg(post.role)}`}>
+        {post.auteur?.slice(0, 2).toUpperCase()}
+      </div>
+
       {/* Contenu */}
-      <p className="text-sm text-white/70 leading-relaxed line-clamp-3 mb-3">{post.contenu}</p>
-
-      {post.photo && (
-        <img src={post.photo} alt="post" className="w-full h-24 object-cover rounded-lg mb-3 opacity-80" />
-      )}
-
-      {/* Footer */}
-      <div className="mt-auto">
-        <div className="flex items-center gap-3 mb-3">
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0 ${avatarBg(post.role)}`}>
-            {post.auteur?.slice(0, 2).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{post.auteur}</p>
-            <p className="text-[11px] text-white/30">{timeAgo(post.createdAt)}</p>
-          </div>
+      <div className="flex-1 min-w-0">
+        {/* Header */}
+        <div className="flex items-center gap-2 flex-wrap mb-1">
+          <span className="font-bold text-sm text-white">{post.auteur}</span>
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${post.role === "technicien" ? "bg-blue-500/15 text-blue-300" : "bg-violet-500/15 text-violet-300"}`}>
+            {post.role}
+          </span>
+          <span className="text-white/30 text-xs">· {timeAgo(post.createdAt)}</span>
           {user?.username === post.auteur && (
             <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="text-xs text-white/20 hover:text-red-400 transition-colors p-1">✕</button>
+              className="ml-auto text-white/20 hover:text-red-400 transition-colors text-xs px-1">✕</button>
           )}
         </div>
 
+        {/* Texte */}
+        <p className="text-sm text-white/80 leading-relaxed mb-3 whitespace-pre-wrap">{post.contenu}</p>
+
+        {/* Image */}
+        {post.photo && (
+          <img src={post.photo} alt="post" className="w-full max-h-80 object-cover rounded-2xl mb-3 border border-white/[0.08]" />
+        )}
+
         {/* Actions */}
-        <div className="flex items-center gap-3 pt-2 border-t border-white/[0.06]" onClick={e => e.stopPropagation()}>
-          <button onClick={onLike}
-            className={`flex items-center gap-1 text-xs transition-all ${liked ? "text-pink-400" : "text-white/30 hover:text-pink-400"}`}>
-            <span>{liked ? "❤️" : "🤍"}</span>
-            <span>{post.likes.length}</span>
-          </button>
+        <div className="flex items-center gap-6 mt-1" onClick={e => e.stopPropagation()}>
           <button onClick={onToggleComments}
-            className="flex items-center gap-1 text-xs text-white/30 hover:text-violet-400 transition-colors">
-            <span>💬</span>
-            <span>{post.commentaires.length}</span>
+            className="flex items-center gap-1.5 text-white/30 hover:text-violet-400 transition-colors group">
+            <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span className="text-xs">{post.commentaires.length}</span>
           </button>
-          <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-medium ${post.role === "technicien" ? "bg-blue-500/15 text-blue-300" : "bg-violet-500/15 text-violet-300"}`}>
-            {post.role}
-          </span>
+
+          <button onClick={onLike}
+            className={`flex items-center gap-1.5 transition-all group ${liked ? "text-pink-400" : "text-white/30 hover:text-pink-400"}`}>
+            <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill={liked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            <span className="text-xs">{post.likes.length}</span>
+          </button>
         </div>
 
         {/* Commentaires */}
         {commentsOpen && (
-          <div className="mt-3 border-t border-white/[0.06] pt-3" onClick={e => e.stopPropagation()}>
-            {post.commentaires.slice(-2).map((c, ci) => (
-              <div key={ci} className="flex gap-2 mb-2">
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-black flex-shrink-0 ${avatarBg(c.role)}`}>
+          <div className="mt-3 pt-3 border-t border-white/[0.06]" onClick={e => e.stopPropagation()}>
+            {post.commentaires.map((c, ci) => (
+              <div key={ci} className="flex gap-2 mb-3">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 ${avatarBg(c.role)}`}>
                   {c.auteur?.slice(0, 2).toUpperCase()}
                 </div>
-                <div className="flex-1 px-2 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06]">
-                  <span className="text-[10px] font-semibold text-white/70">{c.auteur} </span>
-                  <span className="text-[10px] text-white/50">{c.contenu}</span>
+                <div className="flex-1">
+                  <span className="text-xs font-bold text-white/80">{c.auteur} </span>
+                  <span className="text-xs text-white/50">{c.contenu}</span>
                 </div>
               </div>
             ))}
             {user ? (
               <div className="flex gap-2 mt-2">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 ${avatarBg(user.role)}`}>
+                  {user.username.slice(0, 2).toUpperCase()}
+                </div>
                 <input
                   type="text"
-                  placeholder="Commenter..."
+                  placeholder="Votre réponse..."
                   value={commentInput}
                   onChange={e => onCommentChange(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && onCommentSubmit()}
-                  className="flex-1 px-3 py-1.5 rounded-lg text-xs text-white placeholder-white/25 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:border-violet-500/50 transition-all"
+                  className="flex-1 px-3 py-1.5 rounded-full text-xs text-white placeholder-white/25 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:border-violet-500/50 transition-all"
                 />
                 <button onClick={onCommentSubmit}
-                  className="px-2.5 py-1.5 rounded-lg bg-violet-600/80 hover:bg-violet-600 transition-colors text-xs">→</button>
+                  className="px-3 py-1.5 rounded-full bg-violet-600/80 hover:bg-violet-600 transition-colors text-xs font-semibold">Répondre</button>
               </div>
             ) : (
-              <p className="text-[10px] text-white/30 text-center mt-1">
-                <span onClick={onLogin} className="text-violet-400 cursor-pointer">Connectez-vous</span> pour commenter
+              <p className="text-xs text-white/30 mt-1">
+                <span onClick={onLogin} className="text-violet-400 cursor-pointer hover:underline">Connectez-vous</span> pour répondre
               </p>
             )}
           </div>
         )}
       </div>
     </div>
+    </BorderGlow>
   );
 }
 
@@ -358,20 +376,20 @@ export default function Forum() {
             </div>
           )}
 
-          {/* Posts en marquee */}
-          {loadingPosts ? (
-            <div className="flex justify-center py-20">
-              <span className="spinner w-8 h-8 border-2 border-white/20 border-t-violet-500 rounded-full inline-block" />
-            </div>
-          ) : filteredPosts.length === 0 ? (
-            <div className="text-center py-20 text-white/30">
-              <p className="text-4xl mb-3">💬</p>
-              <p className="text-lg font-medium">Aucune publication dans cette catégorie</p>
-            </div>
-          ) : (() => {
-            const makeCard = (post, prefix) => (
+          {/* Feed vertical style Twitter */}
+          <div className="rounded-2xl border border-white/[0.08] overflow-hidden">
+            {loadingPosts ? (
+              <div className="flex justify-center py-20">
+                <span className="spinner w-8 h-8 border-2 border-white/20 border-t-violet-500 rounded-full inline-block" />
+              </div>
+            ) : filteredPosts.length === 0 ? (
+              <div className="text-center py-20 text-white/30">
+                <p className="text-4xl mb-3">💬</p>
+                <p className="text-lg font-medium">Aucune publication dans cette catégorie</p>
+              </div>
+            ) : filteredPosts.map((post) => (
               <PostCard
-                key={prefix}
+                key={post._id}
                 post={post}
                 user={user}
                 isSelected={selectedPost?._id === post._id}
@@ -388,32 +406,8 @@ export default function Forum() {
                 timeAgo={timeAgo}
                 avatarBg={avatarBg}
               />
-            );
-
-            // Durée proportionnelle au nombre de posts (plus il y en a, plus c'est lent)
-            const duration = `${filteredPosts.length * 4 + 6}s`;
-
-            return (
-              <div className="relative overflow-hidden marquee-wrap -mx-4">
-                <div className="absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#0a0a0f] to-transparent pointer-events-none" />
-                <div className="absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#0a0a0f] to-transparent pointer-events-none" />
-
-                {/* Ligne 1 → gauche */}
-                <div className="py-2 overflow-hidden">
-                  <div className="scroll-ltr" style={{ animationDuration: duration }}>
-                    {filteredPosts.map((p, i) => makeCard(p, `a-${i}`))}
-                  </div>
-                </div>
-
-                {/* Ligne 2 → droite */}
-                <div className="py-2 overflow-hidden">
-                  <div className="scroll-rtl" style={{ animationDuration: duration }}>
-                    {filteredPosts.map((p, i) => makeCard(p, `b-${i}`))}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+            ))}
+          </div>
         </main>
 
         {/* ── SIDEBAR DROITE : profil auteur ── */}

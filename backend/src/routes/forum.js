@@ -5,7 +5,7 @@ import { upload } from '../library/cloudinary.js';
 
 const router = express.Router()
 
-router.get("/get", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const posts = await Post.find().sort({ createdAt: -1 });
     res.json(posts);
@@ -14,7 +14,7 @@ router.get("/get", async (req, res) => {
   }
 });
 
-router.post("/forum-post", requireAuth, upload.single("photo"), async (req, res) => {
+router.post("/", requireAuth, upload.single("photo"), async (req, res) => {
   try {
     const { contenu, auteur, role } = req.body;
     if (!contenu) return res.status(400).json({ message: "Le contenu est requis" });

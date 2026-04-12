@@ -48,6 +48,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/annonces", annoncesRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/forum", forumRoutes);
+app.use("/api/posts", forumRoutes); // alias pour le frontend
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/messages", messagesRoutes)
 
