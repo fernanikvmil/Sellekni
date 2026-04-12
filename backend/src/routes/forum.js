@@ -45,8 +45,21 @@ router.post("/:id/like", async (req, res) => {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: "Post introuvable" });
     const index = post.likes.indexOf(username);
-    if (index === -1) post.likes.push(username);
-    else post.likes.splice(index, 1);
+    if (index === -1) {
+      post.likes.push(username);
+      // Notifier l'auteur du post (pas lui-même)
+      if (username !== post.auteur) {
+        await Notification.create({
+          destinataire: post.auteur,
+          type: "like",
+          auteur: username,
+          postId: post._id.toString(),
+          message: `${username} a aimé votre publication`,
+        });
+      }
+    } else {
+      post.likes.splice(index, 1);
+    }
     await post.save();
     res.json({ likes: post.likes });
   } catch (err) {
@@ -63,6 +76,16 @@ router.post("/:id/commentaires", requireAuth, async (req, res) => {
     post.commentaires.push({ contenu, auteur, role });
     await post.save();
     const commentaire = post.commentaires[post.commentaires.length - 1];
+    // Notifier l'auteur du post (pas lui-même)
+    if (auteur !== post.auteur) {
+      await Notification.create({
+        destinataire: post.auteur,
+        type: "commentaire",
+        auteur,
+        postId: post._id.toString(),
+        message: `${auteur} a commenté : "${contenu.slice(0, 60)}${contenu.length > 60 ? "…" : ""}"`,
+      });
+    }
     res.status(201).json({ commentaire });
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });

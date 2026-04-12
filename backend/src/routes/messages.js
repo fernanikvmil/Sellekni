@@ -1,5 +1,5 @@
 import express from 'express'
-import { Message } from '../models/Schemas.js'
+import { Message, Notification } from '../models/Schemas.js'
 import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router()
@@ -8,7 +8,12 @@ router.post("/message-post", requireAuth, async (req, res) => {
   try {
     const { annonceId, annonceTitre, de, a, message } = req.body;
     const msg = await Message.create({ annonceId, annonceTitre, de, a, message });
-    console.log(`Message de ${de} à ${a} : ${message.slice(0, 30)}`);
+    await Notification.create({
+      destinataire: a,
+      type: "message",
+      auteur: de,
+      message: `${de} vous a envoyé un message : "${message.slice(0, 60)}${message.length > 60 ? "…" : ""}"`,
+    });
     res.status(201).json({ message: "Message envoyé !", msg });
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
@@ -49,6 +54,14 @@ router.post("/:id/reponse", requireAuth, async (req, res) => {
       return res.status(403).json({ message: "Non autorisé" });
     msg.reponses.push({ de: req.user.username, message: message.trim() });
     await msg.save();
+    // Notifier l'autre partie
+    const recipient = msg.a === req.user.username ? msg.de : msg.a;
+    await Notification.create({
+      destinataire: recipient,
+      type: "message",
+      auteur: req.user.username,
+      message: `${req.user.username} a répondu à votre message`,
+    });
     res.json(msg);
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });

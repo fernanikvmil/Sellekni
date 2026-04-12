@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { authHeaders, authFormHeaders, getStatus } from "./api";
 import Navbar from "./Navbar";
@@ -6,7 +7,36 @@ import BorderGlow from "./BorderGlow";
 
 const CATEGORIES = ["Tous", "Techniciens", "Clients", "Questions", "Conseils", "Annonces"];
 
+function ImageModal({ src, onClose }) {
+  useEffect(() => {
+    const handler = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", handler);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <button className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white text-lg transition-all">✕</button>
+      <img
+        src={src}
+        alt="post"
+        className="max-w-[90vw] max-h-[90vh] rounded-2xl object-contain shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      />
+    </div>,
+    document.body
+  );
+}
+
 function PostCard({ post, user, isSelected, liked, commentsOpen, commentInput, onSelect, onLike, onToggleComments, onCommentChange, onCommentSubmit, onDelete, onLogin, timeAgo, avatarBg }) {
+  const [lightbox, setLightbox] = useState(null);
   return (
     <BorderGlow
       edgeSensitivity={50}
@@ -19,51 +49,52 @@ function PostCard({ post, user, isSelected, liked, commentsOpen, commentInput, o
     >
       <div
         onClick={onSelect}
-        className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors duration-150
+        className={`grid grid-cols-[auto_1fr_auto] gap-x-4 gap-y-1 px-5 py-4 cursor-pointer transition-colors duration-150
           ${isSelected ? "bg-violet-500/5" : "hover:bg-white/[0.02]"}`}
       >
         {/* Avatar */}
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0 ${avatarBg(post.role)}`}>
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0 row-span-2 self-center ${avatarBg(post.role)}`}>
           {post.auteur?.slice(0, 2).toUpperCase()}
         </div>
 
         {/* Nom + rôle */}
-        <div className="w-36 flex-shrink-0">
-          <div className="text-sm font-bold text-white truncate">{post.auteur}</div>
-          <div className={`text-[10px] uppercase font-semibold tracking-wide mt-0.5 ${post.role === "technicien" ? "text-blue-400" : "text-violet-400"}`}>
+        <div>
+          <div className="text-sm font-bold text-white">{post.auteur}</div>
+          <div className={`text-[10px] uppercase font-semibold tracking-widest ${post.role === "technicien" ? "text-blue-400/70" : "text-violet-400/70"}`}>
             {post.role} · {timeAgo(post.createdAt)}
           </div>
         </div>
 
-        {/* Contenu */}
-        <p className="flex-1 text-xs text-white/60 leading-relaxed line-clamp-2 min-w-0">
-          {post.contenu}
-        </p>
-
-        {/* Image si présente */}
-        {post.photo && (
-          <img src={post.photo} alt="post" className="w-14 h-14 object-cover rounded-xl flex-shrink-0 border border-white/[0.08]" />
-        )}
-
-        {/* Actions */}
-        <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
+        {/* Boutons */}
+        <div className="flex gap-1 row-span-2 self-center" onClick={e => e.stopPropagation()}>
           <button onClick={onToggleComments}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white/30 hover:text-violet-400 hover:bg-violet-500/10 transition-all group">
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-white/30 hover:text-violet-400 hover:bg-violet-500/10 transition-all">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </button>
-
           <button onClick={onLike}
             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${liked ? "text-pink-400 bg-pink-500/10" : "text-white/30 hover:text-pink-400 hover:bg-pink-500/10"}`}>
             <svg className="w-4 h-4" fill={liked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </button>
-
           {user?.username === post.auteur && (
             <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all text-xs">✕</button>
+          )}
+        </div>
+
+        {/* Contenu + image */}
+        <div className="col-start-2">
+          <p className="text-xs text-white/55 leading-relaxed mt-1">{post.contenu}</p>
+          {post.photo && (
+            <img
+              src={post.photo}
+              alt="post"
+              onClick={e => { e.stopPropagation(); setLightbox(post.photo); }}
+              className="mt-2 w-full max-h-48 object-cover rounded-xl border border-white/[0.08] cursor-zoom-in hover:opacity-90 transition-opacity"
+            />
           )}
         </div>
       </div>
@@ -104,6 +135,8 @@ function PostCard({ post, user, isSelected, liked, commentsOpen, commentInput, o
           )}
         </div>
       )}
+
+      {lightbox && <ImageModal src={lightbox} onClose={() => setLightbox(null)} />}
     </BorderGlow>
   );
 }
@@ -124,6 +157,7 @@ export default function Forum() {
   const [authorProfile, setAuthorProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [postError, setPostError] = useState("");
+  const [photoError, setPhotoError] = useState("");
   const fileRef = useRef();
 
   const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -160,8 +194,22 @@ export default function Forum() {
   const handlePhoto = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setPhoto(file);
-    setPreview(URL.createObjectURL(file));
+    setPhotoError("");
+
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const minW = 800, maxW = 1920, minH = 400, maxH = 1080;
+      if (img.width < minW || img.width > maxW || img.height < minH || img.height > maxH) {
+        setPhotoError(`Taille invalide (${img.width}×${img.height}px). Accepté : largeur ${minW}–${maxW}px, hauteur ${minH}–${maxH}px.`);
+        URL.revokeObjectURL(url);
+        fileRef.current.value = "";
+        return;
+      }
+      setPhoto(file);
+      setPreview(url);
+    };
+    img.src = url;
   };
 
   const handlePost = async () => {
@@ -328,6 +376,11 @@ export default function Forum() {
                   {loading ? <span className="spinner w-4 h-4 border-2 border-white/30 border-t-white rounded-full inline-block" /> : "Publier →"}
                 </button>
               </div>
+              {photoError && (
+                <p className="text-xs text-red-400 mt-2 flex items-center gap-1">
+                  ⚠️ {photoError}
+                </p>
+              )}
               {postError && (
                 <p className="text-xs text-red-400 mt-2 text-right">{postError}</p>
               )}
