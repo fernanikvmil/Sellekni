@@ -55,8 +55,8 @@ export default function VerifyEmail() {
       <div className="fade-up relative z-10 flex flex-col items-center gap-8">
 
         {isLoading && (
-          <div className="welcome-card items-center justify-center text-center">
-            <span className="spinner w-10 h-10 border-2 border-violet-400/30 border-t-violet-400 rounded-full inline-block mb-4" />
+          <div className="flex flex-col items-center justify-center text-center gap-4">
+            <span className="spinner w-10 h-10 border-2 border-violet-400/30 border-t-violet-400 rounded-full inline-block" />
             <p className="text-white text-xl font-black">Vérification…</p>
             <p className="text-white/40 text-sm">Veuillez patienter</p>
           </div>
