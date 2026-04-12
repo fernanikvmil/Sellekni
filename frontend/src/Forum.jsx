@@ -295,39 +295,6 @@ export default function Forum() {
       {/* ── BODY 3 colonnes ── */}
       <div className="relative z-10 flex flex-1 max-w-7xl mx-auto w-full px-4 gap-6 py-8">
 
-        {/* ── SIDEBAR GAUCHE ── */}
-        <aside className={`w-56 flex-shrink-0 flex flex-col gap-2 ${mounted ? "fade-in" : "opacity-0"}`}>
-          <p className="text-[10px] font-bold tracking-widest text-white/25 uppercase px-3 mb-1">Catégories</p>
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-left
-                ${activeCategory === cat
-                  ? "bg-violet-600/20 text-violet-300 border border-violet-500/30"
-                  : "text-white/40 hover:text-white/80 hover:bg-white/[0.04]"
-                }`}
-            >
-              <span>{cat}</span>
-              {activeCategory === cat && (
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-              )}
-            </button>
-          ))}
-
-          <div className="mt-4 h-px bg-white/[0.06]" />
-          <p className="text-[10px] font-bold tracking-widest text-white/25 uppercase px-3 mt-3 mb-1">Navigation</p>
-          <button onClick={() => navigate("/")} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-white/40 hover:text-white/80 hover:bg-white/[0.04] transition-all">
-            <span>🏠</span><span>Accueil</span>
-          </button>
-          <button onClick={() => navigate("/annonces")} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-white/40 hover:text-white/80 hover:bg-white/[0.04] transition-all">
-            <span>📋</span><span>Annonces</span>
-          </button>
-          <button onClick={() => navigate("/messages")} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm text-white/40 hover:text-white/80 hover:bg-white/[0.04] transition-all">
-            <span>📝</span><span>Messages</span>
-          </button>
-        </aside>
-
         {/* ── CENTRE : posts ── */}
         <main className="flex-1 min-w-0 flex flex-col gap-4">
 
