@@ -21,7 +21,9 @@ const userSchema = new mongoose.Schema({
   wilaya:            { type: String, default: "" },
   ville:             { type: String, default: "" },
   notations:         [{ auteur: String, note: Number }],
-  lastSeen:          { type: Date, default: null },
+  lastSeen:               { type: Date, default: null },
+  resetPasswordToken:     { type: String, default: null },
+  resetPasswordExpires:   { type: Date, default: null },
 }, { timestamps: true });
 
 const annonceSchema = new mongoose.Schema({
