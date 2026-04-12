@@ -9,105 +9,101 @@ const CATEGORIES = ["Tous", "Techniciens", "Clients", "Questions", "Conseils", "
 function PostCard({ post, user, isSelected, liked, commentsOpen, commentInput, onSelect, onLike, onToggleComments, onCommentChange, onCommentSubmit, onDelete, onLogin, timeAgo, avatarBg }) {
   return (
     <BorderGlow
-      edgeSensitivity={40}
+      edgeSensitivity={50}
       glowColor="139 92 246"
       backgroundColor="#060010"
-      borderRadius={0}
-      glowRadius={60}
-      glowIntensity={0.8}
+      borderRadius={16}
+      glowRadius={80}
+      glowIntensity={1}
       colors={["#c084fc", "#1e1e2e", "#f472b6", "#1e1e2e", "#38bdf8"]}
     >
-    <div
-      onClick={onSelect}
-      className={`flex gap-3 px-4 py-4 cursor-pointer border-b border-white/[0.06] transition-colors duration-150
-        ${isSelected ? "bg-violet-500/5" : "hover:bg-white/[0.02]"}`}
-    >
-      {/* Avatar */}
-      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0 ${avatarBg(post.role)}`}>
-        {post.auteur?.slice(0, 2).toUpperCase()}
-      </div>
-
-      {/* Contenu */}
-      <div className="flex-1 min-w-0">
-        {/* Header */}
-        <div className="flex items-center gap-2 flex-wrap mb-1">
-          <span className="font-bold text-sm text-white">{post.auteur}</span>
-          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${post.role === "technicien" ? "bg-blue-500/15 text-blue-300" : "bg-violet-500/15 text-violet-300"}`}>
-            {post.role}
-          </span>
-          <span className="text-white/30 text-xs">· {timeAgo(post.createdAt)}</span>
-          {user?.username === post.auteur && (
-            <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="ml-auto text-white/20 hover:text-red-400 transition-colors text-xs px-1">✕</button>
-          )}
+      <div
+        onClick={onSelect}
+        className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors duration-150
+          ${isSelected ? "bg-violet-500/5" : "hover:bg-white/[0.02]"}`}
+      >
+        {/* Avatar */}
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0 ${avatarBg(post.role)}`}>
+          {post.auteur?.slice(0, 2).toUpperCase()}
         </div>
 
-        {/* Texte */}
-        <p className="text-sm text-white/80 leading-relaxed mb-3 whitespace-pre-wrap">{post.contenu}</p>
+        {/* Nom + rôle */}
+        <div className="w-36 flex-shrink-0">
+          <div className="text-sm font-bold text-white truncate">{post.auteur}</div>
+          <div className={`text-[10px] uppercase font-semibold tracking-wide mt-0.5 ${post.role === "technicien" ? "text-blue-400" : "text-violet-400"}`}>
+            {post.role} · {timeAgo(post.createdAt)}
+          </div>
+        </div>
 
-        {/* Image */}
+        {/* Contenu */}
+        <p className="flex-1 text-xs text-white/60 leading-relaxed line-clamp-2 min-w-0">
+          {post.contenu}
+        </p>
+
+        {/* Image si présente */}
         {post.photo && (
-          <img src={post.photo} alt="post" className="w-full max-h-80 object-cover rounded-2xl mb-3 border border-white/[0.08]" />
+          <img src={post.photo} alt="post" className="w-14 h-14 object-cover rounded-xl flex-shrink-0 border border-white/[0.08]" />
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-6 mt-1" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
           <button onClick={onToggleComments}
-            className="flex items-center gap-1.5 text-white/30 hover:text-violet-400 transition-colors group">
-            <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-white/30 hover:text-violet-400 hover:bg-violet-500/10 transition-all group">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <span className="text-xs">{post.commentaires.length}</span>
           </button>
 
           <button onClick={onLike}
-            className={`flex items-center gap-1.5 transition-all group ${liked ? "text-pink-400" : "text-white/30 hover:text-pink-400"}`}>
-            <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill={liked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${liked ? "text-pink-400 bg-pink-500/10" : "text-white/30 hover:text-pink-400 hover:bg-pink-500/10"}`}>
+            <svg className="w-4 h-4" fill={liked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
-            <span className="text-xs">{post.likes.length}</span>
           </button>
-        </div>
 
-        {/* Commentaires */}
-        {commentsOpen && (
-          <div className="mt-3 pt-3 border-t border-white/[0.06]" onClick={e => e.stopPropagation()}>
+          {user?.username === post.auteur && (
+            <button onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all text-xs">✕</button>
+          )}
+        </div>
+      </div>
+
+      {/* Commentaires (expand sous la row) */}
+      {commentsOpen && (
+        <div className="px-5 pb-4 border-t border-white/[0.06]" onClick={e => e.stopPropagation()}>
+          <div className="mt-3 space-y-2">
             {post.commentaires.map((c, ci) => (
-              <div key={ci} className="flex gap-2 mb-3">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 ${avatarBg(c.role)}`}>
+              <div key={ci} className="flex gap-2 items-start">
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[9px] font-black flex-shrink-0 ${avatarBg(c.role)}`}>
                   {c.auteur?.slice(0, 2).toUpperCase()}
                 </div>
-                <div className="flex-1">
-                  <span className="text-xs font-bold text-white/80">{c.auteur} </span>
-                  <span className="text-xs text-white/50">{c.contenu}</span>
+                <div className="flex-1 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <span className="text-[11px] font-bold text-white/70">{c.auteur} </span>
+                  <span className="text-[11px] text-white/45">{c.contenu}</span>
                 </div>
               </div>
             ))}
-            {user ? (
-              <div className="flex gap-2 mt-2">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 ${avatarBg(user.role)}`}>
-                  {user.username.slice(0, 2).toUpperCase()}
-                </div>
-                <input
-                  type="text"
-                  placeholder="Votre réponse..."
-                  value={commentInput}
-                  onChange={e => onCommentChange(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && onCommentSubmit()}
-                  className="flex-1 px-3 py-1.5 rounded-full text-xs text-white placeholder-white/25 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:border-violet-500/50 transition-all"
-                />
-                <button onClick={onCommentSubmit}
-                  className="px-3 py-1.5 rounded-full bg-violet-600/80 hover:bg-violet-600 transition-colors text-xs font-semibold">Répondre</button>
-              </div>
-            ) : (
-              <p className="text-xs text-white/30 mt-1">
-                <span onClick={onLogin} className="text-violet-400 cursor-pointer hover:underline">Connectez-vous</span> pour répondre
-              </p>
-            )}
           </div>
-        )}
-      </div>
-    </div>
+          {user ? (
+            <div className="flex gap-2 mt-3">
+              <input
+                type="text"
+                placeholder="Répondre..."
+                value={commentInput}
+                onChange={e => onCommentChange(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && onCommentSubmit()}
+                className="flex-1 px-3 py-1.5 rounded-xl text-xs text-white placeholder-white/25 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:border-violet-500/50 transition-all"
+              />
+              <button onClick={onCommentSubmit}
+                className="px-4 py-1.5 rounded-xl bg-violet-600/80 hover:bg-violet-600 transition-colors text-xs font-semibold">→</button>
+            </div>
+          ) : (
+            <p className="text-xs text-white/30 mt-2 text-center">
+              <span onClick={onLogin} className="text-violet-400 cursor-pointer hover:underline">Connectez-vous</span> pour répondre
+            </p>
+          )}
+        </div>
+      )}
     </BorderGlow>
   );
 }
@@ -343,8 +339,8 @@ export default function Forum() {
             </div>
           )}
 
-          {/* Feed vertical style Twitter */}
-          <div className="rounded-2xl border border-white/[0.08] overflow-hidden">
+          {/* Feed liste style DaisyUI */}
+          <div className="flex flex-col gap-2">
             {loadingPosts ? (
               <div className="flex justify-center py-20">
                 <span className="spinner w-8 h-8 border-2 border-white/20 border-t-violet-500 rounded-full inline-block" />
