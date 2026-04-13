@@ -58,9 +58,9 @@ router.post("/signup", async (req, res) => {
       specialite: specialite || "",
     });
 
-    // Envoi email non bloquant (Resend)
+    // Envoi email
     sendVerificationEmail(email, verificationToken)
-      .catch(err => console.error("Erreur envoi email:", err.message));
+      .catch(err => console.error("Erreur envoi email COMPLET:", JSON.stringify(err, null, 2), err.message, err.stack));
 
     res.status(201).json({ message: "Compte créé ! Vérifiez votre email pour l'activer." });
   } catch (err) {
