@@ -1,20 +1,32 @@
-import nodemailer from "nodemailer";
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const SENDER_EMAIL = "kamilfernani9@gmail.com";
+const SENDER_NAME = "Sellekni";
 
-const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "a7f1e8001@smtp-brevo.com",
-    pass: "0cbY5Lxr4R9KNzyV",
-  },
-});
+const sendEmail = async ({ to, subject, html }) => {
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "api-key": BREVO_API_KEY,
+    },
+    body: JSON.stringify({
+      sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(`Brevo API error: ${JSON.stringify(err)}`);
+  }
+};
 
 export const sendVerificationEmail = async (to, token) => {
   const url = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
-  await transporter.sendMail({
-    from: '"Sellekni" <kamilfernani9@gmail.com>',
+  await sendEmail({
     to,
     subject: "Vérifiez votre adresse email — Sellekni",
     html: `
@@ -36,8 +48,7 @@ export const sendVerificationEmail = async (to, token) => {
 export const sendPasswordResetEmail = async (to, token) => {
   const url = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
-  await transporter.sendMail({
-    from: '"Sellekni" <kamilfernani9@gmail.com>',
+  await sendEmail({
     to,
     subject: "Réinitialisation de votre mot de passe — Sellekni",
     html: `
