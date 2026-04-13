@@ -1,25 +1,32 @@
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const MAILJET_API_KEY = process.env.MAILJET_API_KEY;
+const MAILJET_SECRET_KEY = process.env.MAILJET_SECRET_KEY;
 const SENDER_EMAIL = "kamilfernani9@gmail.com";
 const SENDER_NAME = "Sellekni";
 
 const sendEmail = async ({ to, subject, html }) => {
-  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+  const credentials = Buffer.from(`${MAILJET_API_KEY}:${MAILJET_SECRET_KEY}`).toString("base64");
+
+  const response = await fetch("https://api.mailjet.com/v3.1/send", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "api-key": BREVO_API_KEY,
+      "Authorization": `Basic ${credentials}`,
     },
     body: JSON.stringify({
-      sender: { name: SENDER_NAME, email: SENDER_EMAIL },
-      to: [{ email: to }],
-      subject,
-      htmlContent: html,
+      Messages: [
+        {
+          From: { Email: SENDER_EMAIL, Name: SENDER_NAME },
+          To: [{ Email: to }],
+          Subject: subject,
+          HTMLPart: html,
+        },
+      ],
     }),
   });
 
   if (!response.ok) {
     const err = await response.json();
-    throw new Error(`Brevo API error: ${JSON.stringify(err)}`);
+    throw new Error(`Mailjet error: ${JSON.stringify(err)}`);
   }
 };
 
