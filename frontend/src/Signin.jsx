@@ -3,12 +3,7 @@ import DatePicker from "./DatePicker";
 import { useNavigate } from "react-router-dom";
 import VerificationModal from "./VerificationModal";
 
-import artisan from '/artisan.svg'
-import client from '/client.svg'
-import logo from '/logo.png'
-
-import { User, Mail, Lock, KeyRound, Pickaxe, Phone, Calendar1, Eye, EyeOff } from 'lucide-react'
-import { MapPin } from "lucide-react";
+import { User, Mail, Lock, KeyRound, Pickaxe, Phone, Calendar1, Eye, EyeOff, MapPin } from 'lucide-react';
 
 const WILAYAS = [
   "Adrar","Chlef","Laghouat","Oum El Bouaghi","Batna","Béjaïa","Biskra",
@@ -187,8 +182,8 @@ export default function Signin() {
   };
 
   const roles = [
-    { key: "client",     src: client,  label: "Client",     desc: "Publier des annonces" },
-    { key: "technicien", src: artisan, label: "Technicien", desc: "Proposer des services" },
+    { key: "client",     emoji: "👤",  label: "Client",     desc: "Publier des annonces" },
+    { key: "technicien", emoji: "🔧", label: "Technicien", desc: "Proposer des services" },
   ];
 
   return (
@@ -247,7 +242,7 @@ export default function Signin() {
             onClick={() => navigate("/")}
           >
             <div className="ping-slow absolute inset-0 rounded-2xl border border-purple-500/30" />
-            <img src={logo} alt="logoPNG" className="w-20 h-20"/>
+            <span className="text-4xl">🛠️</span>
           </div>
           <h1 className="text-white text-3xl font-black tracking-tight">Créer un compte</h1>
           <p className="text-white/40 text-sm mt-1 font-light">Rejoignez la communauté sellekni</p>
@@ -257,7 +252,7 @@ export default function Signin() {
         <p className="text-white/40 text-[11px] text-center uppercase tracking-widest mb-3">Je suis un</p>
 
         <div className="grid grid-cols-2 gap-3 mb-5">
-          {roles.map(({ key, src, label, desc }) => {
+          {roles.map(({ key, emoji, label, desc }) => {
             const active = role === key;
             return (
               <button
@@ -270,7 +265,7 @@ export default function Signin() {
                     : "border-white/8 bg-white/3 hover:bg-white/6"
                 }`}
               >
-                <img src={src} className="w-10"/>
+                <span className="text-3xl">{emoji}</span>
                 <span className={`text-sm font-semibold transition-colors duration-200 ${active ? "text-violet-300" : "text-white/60"}`}>{label}</span>
                 <span className="text-[11px] text-white/30">{desc}</span>
                 <div className={`mt-1 w-4.5 h-4.5 rounded-full flex items-center justify-center transition-all duration-200 ${active ? "bg-violet-600" : "bg-white/10"}`}>
