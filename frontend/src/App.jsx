@@ -26,6 +26,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signin" element={<Signin />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/verify-email/:token" element={<VerifyEmail />} />
       <Route path="/messages" element={<Messages />} />
       <Route path="/profil/:username" element={<PublicProfile />} />
       <Route path="/annonces" element={<Annonces/>}/>

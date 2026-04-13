@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
+  const { token: tokenParam } = useParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState("loading"); // loading | success | error
   const [message, setMessage] = useState("");
@@ -11,13 +12,16 @@ export default function VerifyEmail() {
   useEffect(() => {
     if (called.current) return;
     called.current = true;
-    const token = searchParams.get("token");
+    // Accepte ?token=... OU /verify-email/:token
+    const token = searchParams.get("token") || tokenParam;
     if (!token) {
       setStatus("error");
       setMessage("Token de vérification manquant.");
       return;
     }
+    // Essaie les deux routes backend
     fetch(`/api/verify-email?token=${token}`)
+      .then(res => res.ok ? res : fetch(`/api/auth/verify-email/${token}`))
       .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
       .then(({ ok, data }) => {
         if (ok) {
