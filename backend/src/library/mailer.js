@@ -14,7 +14,7 @@ export const sendVerificationEmail = async (to, token) => {
   const url = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
   await transporter.sendMail({
-    from: '"Sellekni" <a7f1e8001@smtp-brevo.com>',
+    from: '"Sellekni" <kamilfernani9@gmail.com>',
     to,
     subject: "Vérifiez votre adresse email — Sellekni",
     html: `
@@ -37,7 +37,7 @@ export const sendPasswordResetEmail = async (to, token) => {
   const url = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
   await transporter.sendMail({
-    from: '"Sellekni" <a7f1e8001@smtp-brevo.com>',
+    from: '"Sellekni" <kamilfernani9@gmail.com>',
     to,
     subject: "Réinitialisation de votre mot de passe — Sellekni",
     html: `
