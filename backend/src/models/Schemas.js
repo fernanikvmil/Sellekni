@@ -24,6 +24,8 @@ const userSchema = new mongoose.Schema({
   lastSeen:               { type: Date, default: null },
   resetPasswordToken:     { type: String, default: null },
   resetPasswordExpires:   { type: Date, default: null },
+  verificationCode:       { type: String, default: null },
+  verificationCodeExpiry: { type: Date, default: null },
 }, { timestamps: true });
 
 const annonceSchema = new mongoose.Schema({

@@ -1,6 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import DatePicker from "./DatePicker";
 import { useNavigate } from "react-router-dom";
+import VerificationModal from "./VerificationModal";
+
+import artisan from '/artisan.svg'
+import client from '/client.svg'
+import logo from '/logo.png'
+
+import { User, Mail, Lock, KeyRound, Pickaxe, Phone, Calendar1, Eye, EyeOff } from 'lucide-react'
+import { MapPin } from "lucide-react";
 
 const WILAYAS = [
   "Adrar","Chlef","Laghouat","Oum El Bouaghi","Batna","Béjaïa","Biskra",
@@ -93,7 +101,7 @@ export default function Signin() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [role, setRole] = useState("client");
   const [error, setError] = useState("");
-  const [emailSent, setEmailSent] = useState(false);
+  const [verificationData, setVerificationData] = useState(null); // { userId, email }
 
   const [form, setForm] = useState({
     username: "",
@@ -124,7 +132,7 @@ export default function Signin() {
     e.preventDefault();
     setError("");
 
-    if (!form.username || !form.email || !form.password || !form.confirm) {
+    if (!form.username || !form.email || !form.password || !form.confirm || !form.dateNaissance) {
       triggerShake("Veuillez remplir tous les champs obligatoires.");
       return;
     }
@@ -149,7 +157,7 @@ export default function Signin() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/signup", {
+      const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -169,7 +177,7 @@ export default function Signin() {
       if (!res.ok) {
         triggerShake(data.message);
       } else {
-        setEmailSent(true);
+        setVerificationData({ userId: data.userId, email: form.email });
       }
     } catch {
       triggerShake("Erreur de connexion au serveur");
@@ -179,45 +187,20 @@ export default function Signin() {
   };
 
   const roles = [
-    { key: "client",     emoji: "🛒", label: "Client",     desc: "Acheter des produits" },
-    { key: "technicien", emoji: "🔧", label: "Technicien", desc: "Proposer des services" },
+    { key: "client",     src: client,  label: "Client",     desc: "Publier des annonces" },
+    { key: "technicien", src: artisan, label: "Technicien", desc: "Proposer des services" },
   ];
 
-  if (emailSent) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center relative">
-        <div className="fixed inset-0 pointer-events-none [background-image:linear-gradient(rgba(139,92,246,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.06)_1px,transparent_1px)] [background-size:60px_60px]" />
-        <div className="fixed top-[-120px] left-[-80px] w-[400px] h-[400px] rounded-full bg-purple-600/20 blur-[100px] animate-pulse pointer-events-none" />
-        <div
-          className="relative z-10 w-[440px] max-w-[calc(100vw-2rem)] px-10 py-11
-            bg-white/[0.03] backdrop-blur-2xl border border-white/[0.08] rounded-3xl
-            shadow-[0_0_0_1px_rgba(139,92,246,0.12),0_40px_80px_rgba(0,0,0,0.55)]
-            fade-up flex flex-col items-center text-center"
-        >
-          <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}.fade-up{animation:fadeUp 0.65s cubic-bezier(.22,1,.36,1) forwards}`}</style>
-          <div className="absolute top-0 left-[20%] right-[20%] h-[2px] rounded-b bg-gradient-to-r from-transparent via-purple-500 to-transparent" />
-          <div className="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-purple-600/30 to-pink-500/20 border border-purple-500/30 rounded-2xl mb-6">
-            <span className="text-3xl">📧</span>
-          </div>
-          <h2 className="text-white text-2xl font-black tracking-tight mb-2">Vérifiez votre email</h2>
-          <p className="text-white/50 text-sm leading-relaxed mb-6">
-            Un lien de confirmation a été envoyé à<br/>
-            <span className="text-purple-400 font-medium">{form.email}</span>.<br/>
-            Cliquez sur ce lien pour activer votre compte.
-          </p>
-          <p className="text-white/25 text-xs mb-6">Le lien expire dans 24h. Pensez à vérifier vos spams.</p>
-          <button
-            onClick={() => navigate("/login")}
-            className="w-full py-3.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-violet-700 to-purple-500 hover:from-violet-600 hover:to-purple-400 transition-all duration-300"
-          >
-            Aller à la page de connexion →
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
+    <>
+    {verificationData && (
+      <VerificationModal
+        userId={verificationData.userId}
+        email={verificationData.email}
+        onSuccess={() => navigate("/login")}
+        onClose={() => setVerificationData(null)}
+      />
+    )}
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center overflow-hidden relative py-10">
 
       <style>{`
@@ -236,36 +219,35 @@ export default function Signin() {
           0%   { transform: scale(1);   opacity: 0.5; }
           100% { transform: scale(1.6); opacity: 0; }
         }
-        .fade-up   { animation: fadeUp 0.65s cubic-bezier(.22,1,.36,1) forwards; }
         .do-shake  { animation: shake 0.5s ease; }
         .ping-slow { animation: ping-slow 2.5s ease-out infinite; }
       `}</style>
 
-      <div className="fixed inset-0 pointer-events-none z-0 [background-image:linear-gradient(rgba(139,92,246,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.06)_1px,transparent_1px)] [background-size:60px_60px]" />
-      <div className="fixed top-[-120px] left-[-80px] w-[400px] h-[400px] rounded-full bg-purple-600/20 blur-[100px] animate-pulse pointer-events-none z-0" />
-      <div className="fixed bottom-[-80px] right-[-80px] w-[350px] h-[350px] rounded-full bg-pink-500/15 blur-[90px] animate-pulse pointer-events-none z-0 [animation-delay:1s]" />
-      <div className="fixed top-1/2 right-1/4 w-[250px] h-[250px] rounded-full bg-blue-500/10 blur-[70px] animate-pulse pointer-events-none z-0 [animation-delay:0.5s]" />
+      <div className="fixed inset-0 pointer-events-none z-0 [linear-gradient(rgba(139,92,246,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.06)_1px,transparent_1px)] bg-size-[60px_60px]" />
+      <div className="fixed top-30 left-20 w-100 h-100 rounded-full bg-purple-600/20 blur-[100px] animate-pulse pointer-events-none z-0" />
+      <div className="fixed -bottom-20 -right-20 w-87.5 h-87.5 rounded-full bg-pink-500/15 blur-[90px] animate-pulse pointer-events-none z-0 [animation-delay:1s]" />
+      <div className="fixed top-1/2 right-1/4 w-62.5 h-62.5 rounded-full bg-blue-500/10 blur-[70px] animate-pulse pointer-events-none z-0 [animation-delay:0.5s]" />
 
       <div
         className={`
-          relative z-10 w-[440px] max-w-[calc(100vw-2rem)] px-10 py-11
-          bg-white/[0.03] backdrop-blur-2xl
-          border border-white/[0.08] rounded-3xl
+          relative z-10 lg:w-110 w-90 px-10 py-11
+          bg-white/3 backdrop-blur-2xl
+          border border-white/8 rounded-3xl
           shadow-[0_0_0_1px_rgba(139,92,246,0.12),0_40px_80px_rgba(0,0,0,0.55)]
           transition-opacity duration-500
           ${mounted ? "fade-up" : "opacity-0"}
           ${shake ? "do-shake" : ""}
         `}
       >
-        <div className="absolute top-0 left-[20%] right-[20%] h-[2px] rounded-b bg-gradient-to-r from-transparent via-purple-500 to-transparent" />
+        <div className="absolute top-0 left-[20%] right-[20%] h-0.5 rounded-b bg-linear-to-r from-transparent via-purple-500 to-transparent" />
 
         <div className="flex flex-col items-center mb-8">
           <div
-            className="relative w-14 h-14 flex items-center justify-center bg-gradient-to-br from-purple-600/30 to-pink-500/20 border border-purple-500/30 rounded-2xl mb-5 cursor-pointer"
+            className="relative w-20 h-20 flex items-center justify-center bg-linear-to-br from-purple-600/30 to-pink-500/20 border border-purple-500/30 rounded-2xl mb-5 cursor-pointer"
             onClick={() => navigate("/")}
           >
             <div className="ping-slow absolute inset-0 rounded-2xl border border-purple-500/30" />
-            <span className="text-2xl">🛠️</span>
+            <img src={logo} alt="logoPNG" className="w-20 h-20"/>
           </div>
           <h1 className="text-white text-3xl font-black tracking-tight">Créer un compte</h1>
           <p className="text-white/40 text-sm mt-1 font-light">Rejoignez la communauté sellekni</p>
@@ -273,24 +255,25 @@ export default function Signin() {
 
         {/* Role selector */}
         <p className="text-white/40 text-[11px] text-center uppercase tracking-widest mb-3">Je suis un</p>
+
         <div className="grid grid-cols-2 gap-3 mb-5">
-          {roles.map(({ key, emoji, label, desc }) => {
+          {roles.map(({ key, src, label, desc }) => {
             const active = role === key;
             return (
               <button
                 key={key}
                 type="button"
-                onClick={() => { setRole(key); setForm(f => ({ ...f, specialite: "" })); }}
+                onClick={() => { setRole(key); setForm(f => ({ ...f, specialite: key })); }}
                 className={`flex flex-col items-center gap-1 py-4 px-3 rounded-2xl border transition-all duration-200 cursor-pointer ${
                   active
                     ? "border-violet-500/70 bg-violet-500/10 shadow-[0_0_0_1px_rgba(139,92,246,0.2)]"
-                    : "border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06]"
+                    : "border-white/8 bg-white/3 hover:bg-white/6"
                 }`}
               >
-                <span className="text-2xl">{emoji}</span>
+                <img src={src} className="w-10"/>
                 <span className={`text-sm font-semibold transition-colors duration-200 ${active ? "text-violet-300" : "text-white/60"}`}>{label}</span>
                 <span className="text-[11px] text-white/30">{desc}</span>
-                <div className={`mt-1 w-[18px] h-[18px] rounded-full flex items-center justify-center transition-all duration-200 ${active ? "bg-violet-600" : "bg-white/10"}`}>
+                <div className={`mt-1 w-4.5 h-4.5 rounded-full flex items-center justify-center transition-all duration-200 ${active ? "bg-violet-600" : "bg-white/10"}`}>
                   <span className={`text-[10px] font-bold ${active ? "text-white" : "text-white/20"}`}>✓</span>
                 </div>
               </button>
@@ -308,77 +291,68 @@ export default function Signin() {
 
           {/* Username */}
           <div className="relative group">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors text-sm pointer-events-none">👤</span>
+            <User className="absolute left-3.5 top-1/2 pr-2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors text-sm pointer-events-none" />
             <input
               type="text"
               name="username"
               placeholder="Nom d'utilisateur *"
               value={form.username}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3.5 rounded-xl text-sm text-white placeholder-white/25 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:bg-purple-500/10 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15 transition-all duration-300"
+              className="w-full pl-10 pr-4 py-3.5 rounded-xl text-sm text-white placeholder-white/25 bg-white/4 border border-white/8 focus:outline-none focus:bg-purple-500/10 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15 transition-all duration-300"
             />
           </div>
 
           {/* Email */}
           <div className="relative group">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors text-sm pointer-events-none">✉️</span>
+            <Mail className="absolute left-3.5 pr-2 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors text-sm pointer-events-none" />
             <input
               type="email"
               name="email"
               placeholder="Adresse email *"
               value={form.email}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3.5 rounded-xl text-sm text-white placeholder-white/25 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:bg-purple-500/10 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15 transition-all duration-300"
+              className="w-full pl-10 pr-4 py-3.5 rounded-xl text-sm text-white placeholder-white/25 bg-white/4 border border-white/8 focus:outline-none focus:bg-purple-500/10 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15 transition-all duration-300"
             />
           </div>
 
           {/* Password */}
           <div className="relative group">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors text-sm pointer-events-none">🔒</span>
+            <Lock className="absolute left-3.5 pr-2 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors text-sm pointer-events-none" />
             <input
               type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Mot de passe *"
               value={form.password}
               onChange={handleChange}
-              className="w-full pl-10 pr-10 py-3.5 rounded-xl text-sm text-white placeholder-white/25 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:bg-purple-500/10 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15 transition-all duration-300"
+              className="w-full pl-10 pr-10 py-3.5 rounded-xl text-sm text-white placeholder-white/25 bg-white/4 border border-white/8 focus:outline-none focus:bg-purple-500/10 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15 transition-all duration-300"
             />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors text-xs">
-              {showPassword ? "🙈" : "👁️"}
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors border-l pl-2 h-full border-white/8">
+              {showPassword ? (<Eye size={19} color="#FFFFFF4D" className="hover:cursor-pointer"/>) : (<EyeOff size={19} color="#FFFFFF4D" className="hover:cursor-pointer"/>)}
             </button>
           </div>
 
           {/* Confirm password */}
           <div className="relative group">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors text-sm pointer-events-none">🔑</span>
+            <KeyRound className="absolute left-3.5 top-1/2 pr-2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors text-sm pointer-events-none" />
             <input
               type={showConfirm ? "text" : "password"}
               name="confirm"
               placeholder="Confirmer le mot de passe *"
               value={form.confirm}
               onChange={handleChange}
-              className={`w-full pl-10 pr-10 py-3.5 rounded-xl text-sm text-white placeholder-white/25 bg-white/[0.04] border focus:outline-none focus:bg-purple-500/10 focus:ring-2 focus:ring-purple-500/15 transition-all duration-300 ${
+              className={`w-full pl-10 pr-10 py-3.5 rounded-xl text-sm text-white placeholder-white/25 bg-white/4 border focus:outline-none focus:bg-purple-500/10 focus:ring-2 focus:ring-purple-500/15 transition-all duration-300 ${
                 form.confirm && form.password !== form.confirm
                   ? "border-red-500/50 focus:border-red-500/60"
                   : form.confirm && form.password === form.confirm
                   ? "border-green-500/50 focus:border-green-500/60"
-                  : "border-white/[0.08] focus:border-purple-500/60"
+                  : "border-white/8 focus:border-purple-500/60"
               }`}
             />
-            <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors text-xs">
-              {showConfirm ? "🙈" : "👁️"}
+            <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors border-l pl-2 h-full border-white/8">
+              {showConfirm ? (<EyeOff size={19} color="#FFFFFF4D" className="hover:cursor-pointer"/>) : (<Eye size={19} color="#FFFFFF4D" className="hover:cursor-pointer"/>)}
             </button>
-            {form.confirm && (
-              <span className="absolute right-10 top-1/2 -translate-y-1/2 text-xs">
-                {form.password === form.confirm
-                  ? <span className="text-green-400">✓</span>
-                  : <span className="text-red-400">✗</span>
-                }
-              </span>
-            )}
           </div>
 
-          {/* Séparateur champs optionnels */}
           <div className="flex items-center gap-3 mt-1">
             <div className="flex-1 h-px bg-white/[0.07]" />
             <span className="text-[10px] text-white/25 uppercase tracking-widest">Informations supplémentaires</span>
@@ -391,54 +365,52 @@ export default function Signin() {
             onChange={(v) => setForm(f => ({ ...f, wilaya: v }))}
             options={WILAYAS}
             placeholder="Wilaya (optionnel)"
-            icon="📍"
+            icon={<MapPin className="pr-2"/>}
           />
 
-          {/* Spécialité — techniciens seulement */}
+          {/* Spécialité */}
           {role === "technicien" && (
             <SearchableDropdown
               value={form.specialite}
               onChange={(v) => setForm(f => ({ ...f, specialite: v }))}
               options={SPECIALITES}
               placeholder="Spécialité *"
-              icon="🔧"
+              icon={<Pickaxe className="pr-2"/>}
             />
           )}
 
           {/* Téléphone */}
           <div className="relative group">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors text-sm pointer-events-none">📞</span>
+            <Phone className="absolute left-3.5 top-1/2 pr-2 -translate-y-1/2 text-white/30 group-focus-within:text-purple-400 transition-colors text-sm pointer-events-none" />
             <input
               type="tel"
               name="telephone"
               placeholder="Téléphone (optionnel)"
               value={form.telephone}
               onChange={handleChange}
-              className="w-full pl-10 pr-4 py-3.5 rounded-xl text-sm text-white placeholder-white/25 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:bg-purple-500/10 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15 transition-all duration-300"
+              className="w-full pl-10 pr-4 py-3.5 rounded-xl text-sm text-white placeholder-white/25 bg-white/4 border border-white/8 focus:outline-none focus:bg-purple-500/10 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/15 transition-all duration-300"
             />
           </div>
 
           {/* Date de naissance */}
           <DatePicker
-            label="Date de naissance (optionnel)"
-            icon="🎂"
+            label="Date de naissance"
+            icon={<Calendar1 className="pr-2"/>}
             value={form.dateNaissance}
             onChange={(v) => setForm(f => ({ ...f, dateNaissance: v }))}
             maxYear={new Date().getFullYear() - 16}
             minYear={new Date().getFullYear() - 100}
           />
 
-          {/* Terms */}
           <p className="text-xs text-white/25 text-center px-2 mt-1">
             En créant un compte, vous acceptez nos{" "}
             <span className="text-purple-400/70 hover:text-purple-400 cursor-pointer transition-colors">conditions d'utilisation</span>
           </p>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
-            className="relative w-full py-3.5 mt-1 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-violet-700 to-purple-500 hover:from-violet-600 hover:to-purple-400 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(139,92,246,0.4)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300"
+            className="relative w-full py-3.5 mt-1 rounded-xl font-semibold text-sm text-white bg-linear-to-r from-violet-700 to-purple-500 hover:from-violet-600 hover:to-purple-400 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(139,92,246,0.4)] active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 hover:cursor-pointer"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2.5">
@@ -462,5 +434,6 @@ export default function Signin() {
         </p>
       </div>
     </div>
+    </>
   );
 }

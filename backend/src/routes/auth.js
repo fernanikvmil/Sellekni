@@ -4,30 +4,70 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import dns from "dns/promises";
 import { User } from "../models/Schemas.js";
-import { sendVerificationEmail, sendPasswordResetEmail } from "../library/mailer.js";
+import nodemailer from "nodemailer";
 
 const router = express.Router();
 
-// ─── INSCRIPTION ───────────────────────────────────────────────────────────────
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.EMAIL_PORT) || 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ Erreur email:", error.message);
+  } else {
+    console.log("✅ Email configuré");
+  }
+});
+
+function generateVerificationCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendVerificationCode(email, code, username) {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Code de vérification - sellekni",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%); border-radius: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #a855f7; margin-bottom: 10px;">sellekni</h1>
+          <div style="width: 50px; height: 4px; background: linear-gradient(90deg, #a855f7, #06b6d4); margin: 0 auto; border-radius: 2px;"></div>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); border-radius: 16px; padding: 30px;">
+          <h2 style="color: white; text-align: center;">Bonjour ${username} !</h2>
+          <p style="color: #cbd5e1; text-align: center;">Votre code de vérification :</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="display: inline-block; background: #1e1e2e; padding: 15px 30px; border-radius: 12px; border: 2px solid #a855f7;">
+              <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #a855f7;">${code}</span>
+            </div>
+          </div>
+          <p style="color: #94a3b8; text-align: center;">Ce code expire dans <strong>10 minutes</strong>.</p>
+        </div>
+      </div>
+    `
+  };
+  await transporter.sendMail(mailOptions);
+}
+
+// ─── SIGNUP ────────────────────────────────────────────────────────────────────
 router.post("/signup", async (req, res) => {
   try {
     const { username, email, password, role, telephone, dateNaissance, wilaya, specialite } = req.body;
 
-    // Validation email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) return res.status(400).json({ message: "Adresse email invalide." });
 
-    const domain = email.split("@")[1];
-    const knownDomains = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com", "live.com", "msn.com", "aol.com"];
-    if (!knownDomains.includes(domain.toLowerCase())) {
-      try {
-        await dns.resolveMx(domain);
-      } catch {
-        return res.status(400).json({ message: "Ce domaine email n'existe pas." });
-      }
-    }
-
-    // Validation username
     if (!username || username.trim().length < 3)
       return res.status(400).json({ message: "Le nom d'utilisateur doit contenir au moins 3 caractères." });
 
@@ -37,39 +77,121 @@ router.post("/signup", async (req, res) => {
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: "Email déjà utilisé" });
 
-    // Validation mot de passe
     const pwdRegex = /^(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{6,}$/;
     if (!pwdRegex.test(password))
       return res.status(400).json({ message: "Le mot de passe doit contenir au moins 6 caractères, une majuscule et un caractère spécial." });
 
     const hashed = await bcrypt.hash(password, 10);
-    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationCode = generateVerificationCode();
+    const verificationCodeExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
-    await User.create({
+    const user = await User.create({
       username,
       email,
       password: hashed,
       role,
-      verificationToken,
+      verificationCode,
+      verificationCodeExpiry,
       emailVerified: false,
       telephone: telephone || "",
       dateNaissance: dateNaissance || "",
       wilaya: wilaya || "",
-      specialite: specialite || "",
+      specialite: specialite || ""
     });
 
-    // Envoi email
-    sendVerificationEmail(email, verificationToken)
-      .catch(err => console.error("Erreur envoi email COMPLET:", JSON.stringify(err, null, 2), err.message, err.stack));
+    console.log("=========================================");
+    console.log(`📧 Email: ${email}`);
+    console.log(`🔐 CODE DE VÉRIFICATION: ${verificationCode}`);
+    console.log("=========================================");
 
-    res.status(201).json({ message: "Compte créé ! Vérifiez votre email pour l'activer." });
+    try {
+      await sendVerificationCode(email, verificationCode, username);
+      console.log("✅ Email envoyé avec succès");
+    } catch (emailError) {
+      console.log("⚠️ Email non envoyé, mais code disponible dans la console");
+    }
+
+    res.status(201).json({
+      message: "Compte créé ! Vérifiez votre email avec le code",
+      userId: user._id,
+      requiresVerification: true
+    });
+
   } catch (err) {
-    console.error("Erreur signup :", err.message);
-    res.status(500).json({ message: "Erreur serveur", error: err.message });
+    console.error("Erreur signup:", err.message);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
-// ─── CONNEXION ─────────────────────────────────────────────────────────────────
+// ─── VÉRIFICATION DU CODE ──────────────────────────────────────────────────────
+router.post("/verify-code", async (req, res) => {
+  try {
+    const { userId, code } = req.body;
+
+    if (!userId || !code) {
+      return res.status(400).json({ message: "Code requis." });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé." });
+
+    if (user.emailVerified) return res.status(400).json({ message: "Email déjà vérifié." });
+
+    if (user.verificationCode !== code) return res.status(400).json({ message: "Code invalide." });
+
+    if (user.verificationCodeExpiry < new Date()) {
+      return res.status(400).json({ message: "Code expiré. Demandez un nouveau code." });
+    }
+
+    user.emailVerified = true;
+    user.verificationCode = null;
+    user.verificationCodeExpiry = null;
+    await user.save();
+
+    res.json({ message: "Email vérifié avec succès !" });
+
+  } catch (err) {
+    console.error("Erreur vérification:", err.message);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+// ─── RENVOYER LE CODE ──────────────────────────────────────────────────────────
+router.post("/resend-code", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email requis." });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "Utilisateur non trouvé." });
+    if (user.emailVerified) return res.status(400).json({ message: "Email déjà vérifié." });
+
+    const newCode = generateVerificationCode();
+    user.verificationCode = newCode;
+    user.verificationCodeExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    console.log("=========================================");
+    console.log(`📧 Renvoi code pour: ${email}`);
+    console.log(`🔐 NOUVEAU CODE: ${newCode}`);
+    console.log("=========================================");
+
+    try {
+      await sendVerificationCode(email, newCode, user.username);
+      console.log("✅ Email renvoyé");
+    } catch (emailError) {
+      console.log("⚠️ Email non envoyé");
+    }
+
+    res.json({ message: "Nouveau code envoyé !" });
+
+  } catch (err) {
+    console.error("Erreur renvoi:", err.message);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -79,10 +201,15 @@ router.post("/login", async (req, res) => {
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ message: "Mot de passe incorrect." });
-    if (!user.emailVerified) return res.status(403).json({ message: "Veuillez vérifier votre email avant de vous connecter." });
+
+    if (!user.emailVerified) return res.status(403).json({
+      message: "Veuillez vérifier votre email avant de vous connecter.",
+      userId: user._id,
+      requiresVerification: true
+    });
 
     const token = jwt.sign(
-      { username: user.username, role: user.role },
+      { userId: user._id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -90,14 +217,21 @@ router.post("/login", async (req, res) => {
     res.json({
       message: "Connecté !",
       token,
-      user: { username: user.username, email: user.email, role: user.role, photo: user.photo },
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        photo: user.photo
+      }
     });
+
   } catch (err) {
-    res.status(500).json({ message: "Erreur serveur", error: err.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
-// ─── VÉRIFICATION EMAIL (query param ?token=) ──────────────────────────────────
+// ─── VÉRIFICATION EMAIL (lien token - legacy) ──────────────────────────────────
 router.get("/verify-email", async (req, res) => {
   try {
     const { token } = req.query;
@@ -110,32 +244,7 @@ router.get("/verify-email", async (req, res) => {
     );
 
     if (!user) return res.status(400).json({ message: "Token invalide ou déjà utilisé." });
-
     res.json({ message: "Email vérifié avec succès !" });
-  } catch (err) {
-    res.status(500).json({ message: "Erreur serveur", error: err.message });
-  }
-});
-
-// ─── RENVOI EMAIL DE VÉRIFICATION ──────────────────────────────────────────────
-router.post("/resend-verification", async (req, res) => {
-  try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-
-    // Réponse neutre pour ne pas exposer si l'email existe
-    if (!user || user.emailVerified) {
-      return res.status(200).json({ message: "Si ce compte existe, un email a été envoyé." });
-    }
-
-    const newToken = crypto.randomBytes(32).toString("hex");
-    user.verificationToken = newToken;
-    await user.save();
-
-    sendVerificationEmail(email, newToken)
-      .catch(err => console.error("Erreur renvoi email:", err.message));
-
-    res.status(200).json({ message: "Email de vérification renvoyé !" });
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
@@ -146,20 +255,38 @@ router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });
-
     if (!user) return res.status(200).json({ message: "Si ce compte existe, un email a été envoyé." });
 
     const resetToken = crypto.randomBytes(32).toString("hex");
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = new Date(Date.now() + 1000 * 60 * 30); // 30 min
+    user.resetPasswordExpires = new Date(Date.now() + 1000 * 60 * 30);
     await user.save();
 
-    sendPasswordResetEmail(email, resetToken)
-      .catch(err => console.error("Erreur envoi reset email:", err.message));
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Réinitialisation de votre mot de passe — Sellekni",
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#0a0a0f;color:#fff;border-radius:16px;">
+            <h1 style="color:#a855f7;">sellekni</h1>
+            <h2>Réinitialisation du mot de passe</h2>
+            <p>Cliquez sur le lien pour réinitialiser votre mot de passe :</p>
+            <a href="${resetLink}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;text-decoration:none;border-radius:10px;font-weight:bold;">
+              🔑 Réinitialiser mon mot de passe
+            </a>
+            <p style="color:#555;margin-top:28px;font-size:12px;">Ce lien expire dans 30 minutes.</p>
+          </div>
+        `,
+      });
+    } catch (emailError) {
+      console.log("⚠️ Email reset non envoyé:", emailError.message);
+    }
 
     res.status(200).json({ message: "Si ce compte existe, un email a été envoyé." });
   } catch (err) {
-    console.error("Erreur forgot-password:", err.message);
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 });

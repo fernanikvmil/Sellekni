@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import VerificationModal from "./VerificationModal";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function Login() {
   const [shake, setShake] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [error, setError] = useState("");
+  const [verificationData, setVerificationData] = useState(null);
 
   useEffect(() => {
     setTimeout(() => setMounted(true), 50);
@@ -36,11 +38,14 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.message);
-        setShake(true);
-        setTimeout(() => setShake(false), 500);
+        if (data.requiresVerification) {
+          setVerificationData({ userId: data.userId, email });
+        } else {
+          setError(data.message);
+          setShake(true);
+          setTimeout(() => setShake(false), 500);
+        }
       } else {
-        // Sauvegarde l'utilisateur
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         navigate("/");
@@ -55,6 +60,15 @@ export default function Login() {
   };
 
   return (
+    <>
+    {verificationData && (
+      <VerificationModal
+        userId={verificationData.userId}
+        email={verificationData.email}
+        onSuccess={() => { setVerificationData(null); navigate("/login"); }}
+        onClose={() => setVerificationData(null)}
+      />
+    )}
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center overflow-hidden relative">
 
       <div className="absolute top-[-80px] left-[-80px] w-[400px] h-[400px] rounded-full bg-purple-600/20 blur-[80px] animate-pulse" />
@@ -194,5 +208,6 @@ export default function Login() {
         </p>
       </div>
     </div>
+    </>
   );
 }
