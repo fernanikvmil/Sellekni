@@ -38,15 +38,7 @@ function ImageModal({ src, onClose }) {
 function PostCard({ post, user, isSelected, liked, commentsOpen, commentInput, onSelect, onLike, onToggleComments, onCommentChange, onCommentSubmit, onDelete, onLogin, timeAgo, avatarBg }) {
   const [lightbox, setLightbox] = useState(null);
   return (
-    <BorderGlow
-      edgeSensitivity={50}
-      glowColor="139 92 246"
-      backgroundColor="#060010"
-      borderRadius={16}
-      glowRadius={80}
-      glowIntensity={1}
-      colors={["#c084fc", "#1e1e2e", "#f472b6", "#1e1e2e", "#38bdf8"]}
-    >
+    <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12] transition-colors duration-200">
       <div
         onClick={onSelect}
         className={`grid grid-cols-[auto_1fr_auto] gap-x-4 gap-y-1 px-5 py-4 cursor-pointer transition-colors duration-150
@@ -59,7 +51,7 @@ function PostCard({ post, user, isSelected, liked, commentsOpen, commentInput, o
 
         {/* Nom + rôle */}
         <div>
-          <div className="text-sm font-bold text-white">{post.auteur}</div>
+          <div className="text-xs font-bold text-white/60">{post.auteur}</div>
           <div className={`text-[10px] uppercase font-semibold tracking-widest ${post.role === "technicien" ? "text-blue-400/70" : "text-violet-400/70"}`}>
             {post.role} · {timeAgo(post.createdAt)}
           </div>
@@ -87,7 +79,7 @@ function PostCard({ post, user, isSelected, liked, commentsOpen, commentInput, o
 
         {/* Contenu + image */}
         <div className="col-start-2">
-          <p className="text-xs text-white/55 leading-relaxed mt-1">{post.contenu}</p>
+          <p className="text-base font-semibold text-white/90 leading-relaxed mt-1">{post.contenu}</p>
           {post.photo && (
             <img
               src={post.photo}
@@ -137,7 +129,7 @@ function PostCard({ post, user, isSelected, liked, commentsOpen, commentInput, o
       )}
 
       {lightbox && <ImageModal src={lightbox} onClose={() => setLightbox(null)} />}
-    </BorderGlow>
+    </div>
   );
 }
 

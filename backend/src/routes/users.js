@@ -4,23 +4,63 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = express.Router()
 
+router.get("/techniciens", async (req, res) => {
+  try {
+    const { wilaya, specialite, role } = req.query;
+    const filter = { role: role || "technicien" };
+    if (wilaya && wilaya !== "all") filter.wilaya = wilaya;
+    if (specialite && specialite !== "all") filter.specialite = specialite;
+
+    const users = await User.find(filter, {
+      password: 0, verificationToken: 0, verificationCode: 0,
+      verificationCodeExpiry: 0, resetPasswordToken: 0, resetPasswordExpires: 0,
+    });
+
+    const result = users.map(u => {
+      const notations = u.notations || [];
+      const moyenne = notations.length
+        ? notations.reduce((s, n) => s + n.note, 0) / notations.length
+        : 0;
+      return {
+        username: u.username,
+        photo: u.photo,
+        specialite: u.specialite,
+        wilaya: u.wilaya,
+        bio: u.bio,
+        lastSeen: u.lastSeen,
+        totalNotes: notations.length,
+        moyenne: parseFloat(moyenne.toFixed(1)),
+      };
+    }).sort((a, b) => b.moyenne - a.moyenne || b.totalNotes - a.totalNotes);
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+});
+
 router.get("/search", async (req, res) => {
   try {
-    const { q } = req.query;
-    if (!q || q.trim().length < 1) return res.json([]);
-    const users = await User.find(
-      { username: { $regex: q.trim(), $options: "i" } },
-      { username: 1, role: 1, photo: 1, ville: 1, notations: 1 }
-    ).limit(8);
+    const { q, wilaya } = req.query;
+    const filter = {};
+    if (q && q.trim().length >= 1) filter.username = { $regex: q.trim(), $options: "i" };
+    if (wilaya && wilaya !== "all") filter.wilaya = wilaya;
+    if (!q && !wilaya) return res.json([]);
+
+    const users = await User.find(filter, { username: 1, role: 1, photo: 1, wilaya: 1, specialite: 1, notations: 1 }).limit(20);
+
     const result = users.map(u => ({
       username: u.username,
       role: u.role,
       photo: u.photo,
-      ville: u.ville,
+      wilaya: u.wilaya,
+      specialite: u.specialite,
       moyenne: u.notations?.length
-        ? (u.notations.reduce((s, n) => s + n.note, 0) / u.notations.length).toFixed(1)
-        : null,
-    }));
+        ? parseFloat((u.notations.reduce((s, n) => s + n.note, 0) / u.notations.length).toFixed(1))
+        : 0,
+      totalNotes: u.notations?.length || 0,
+    })).sort((a, b) => b.moyenne - a.moyenne || b.totalNotes - a.totalNotes);
+
     res.json(result);
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });

@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { label: "Annonces", path: "/annonces" },
   { label: "Profil", action: "search" },
   { label: "Forum", path: "/forum" },
+  { label: "Map", path: "/map" },
 ];
 
 export default function Navbar() {
@@ -35,8 +36,21 @@ export default function Navbar() {
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
+  const [searchWilaya, setSearchWilaya] = useState("all");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  const WILAYAS = [
+    "Adrar","Chlef","Laghouat","Oum El Bouaghi","Batna","Béjaïa","Biskra",
+    "Béchar","Blida","Bouira","Tamanrasset","Tébessa","Tlemcen","Tiaret",
+    "Tizi Ouzou","Alger","Djelfa","Jijel","Sétif","Saïda","Skikda",
+    "Sidi Bel Abbès","Annaba","Guelma","Constantine","Médéa","Mostaganem",
+    "M'Sila","Mascara","Ouargla","Oran","El Bayadh","Illizi","Bordj Bou Arréridj",
+    "Boumerdès","El Tarf","Tindouf","Tissemsilt","El Oued","Khenchela",
+    "Souk Ahras","Tipaza","Mila","Aïn Defla","Naâma","Aïn Témouchent",
+    "Ghardaïa","Relizane","Timimoun","Bordj Badji Mokhtar","Ouled Djellal",
+    "Béni Abbès","In Salah","In Guezzam","Touggourt","Djanet","El M'Ghair","El Meniaa",
+  ];
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -47,20 +61,23 @@ export default function Navbar() {
 
   // 🔍 RECHERCHE
   useEffect(() => {
-    if (!searchQ.trim()) {
+    if (!searchQ.trim() && searchWilaya === "all") {
       setSearchResults([]);
       return;
     }
     setSearchLoading(true);
     const t = setTimeout(() => {
-      fetch(`/api/users/search?q=${encodeURIComponent(searchQ)}`)
+      const params = new URLSearchParams();
+      if (searchQ.trim()) params.set("q", searchQ.trim());
+      if (searchWilaya !== "all") params.set("wilaya", searchWilaya);
+      fetch(`/api/users/search?${params}`)
         .then(r => r.json())
         .then(d => setSearchResults(d))
         .catch(() => {})
         .finally(() => setSearchLoading(false));
     }, 300);
     return () => clearTimeout(t);
-  }, [searchQ]);
+  }, [searchQ, searchWilaya]);
 
   // 🔔 NOTIFICATIONS
   useEffect(() => {
@@ -72,7 +89,7 @@ export default function Navbar() {
         .catch(() => {});
     };
     fetchUnread();
-    const id = setInterval(fetchUnread, 15000);
+    const id = setInterval(fetchUnread, 5000);
     return () => clearInterval(id);
   }, [user]);
 
@@ -157,6 +174,7 @@ export default function Navbar() {
   const closeSearch = () => {
     setSearchOpen(false);
     setSearchQ("");
+    setSearchWilaya("all");
     setSearchResults([]);
   };
 
@@ -543,39 +561,84 @@ export default function Navbar() {
 
       {/* MODAL RECHERCHE */}
       {searchOpen && (
-        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4 bg-black/70 backdrop-blur-md" onClick={e => { if (e.target === e.currentTarget) closeSearch(); }}>
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-16 px-4 bg-black/70 backdrop-blur-md" onClick={e => { if (e.target === e.currentTarget) closeSearch(); }}>
           <div className="w-full max-w-lg bg-[#0c0c18] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-3">
+
+            {/* Barre de recherche */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06]">
               <div className="flex-1 flex items-center gap-2 border border-violet-500/25 bg-violet-500/5 rounded-lg h-10 px-3">
-                <svg className="w-4 h-4 text-violet-400/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.35-4.35"/>
+                <svg className="w-4 h-4 text-violet-400/70 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                 </svg>
-                <input autoFocus type="text" value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Rechercher un utilisateur..." className="flex-1 bg-transparent text-sm text-white placeholder-white/30 focus:outline-none" />
-                {searchLoading ? <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-violet-400 rounded-full animate-spin" /> : <kbd className="text-[10px] text-violet-400/60">⌘K</kbd>}
+                <input autoFocus type="text" value={searchQ} onChange={e => setSearchQ(e.target.value)} placeholder="Rechercher un profil..." className="flex-1 bg-transparent text-sm text-white placeholder-white/30 focus:outline-none" />
+                {searchLoading && <span className="w-3.5 h-3.5 border-2 border-white/20 border-t-violet-400 rounded-full animate-spin flex-shrink-0" />}
               </div>
-              <button onClick={closeSearch} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white/30">✕</button>
+              <button onClick={closeSearch} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-white/30 flex-shrink-0">✕</button>
             </div>
-            <div className="max-h-80 overflow-y-auto py-2">
-              {!searchQ ? (
-                <div className="flex flex-col items-center py-10">
-                  <p className="text-white/25 text-sm">Tapez un nom d'utilisateur</p>
+
+            {/* Filtre wilaya */}
+            <div className="px-4 py-2.5 border-b border-white/[0.06]">
+              <div className="relative">
+                <select
+                  value={searchWilaya}
+                  onChange={e => setSearchWilaya(e.target.value)}
+                  className="w-full appearance-none bg-white/[0.04] border border-white/[0.08] text-sm rounded-lg px-3 py-2 pr-7 text-white focus:outline-none focus:border-violet-500/40 cursor-pointer"
+                >
+                  <option value="all" className="bg-[#0c0c18]">📍 Toutes les wilayas</option>
+                  {WILAYAS.map(w => <option key={w} value={w} className="bg-[#0c0c18]">{w}</option>)}
+                </select>
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none text-xs">▼</span>
+              </div>
+            </div>
+
+            {/* Résultats */}
+            <div className="max-h-72 overflow-y-auto">
+              {!searchQ.trim() && searchWilaya === "all" ? (
+                <div className="flex flex-col items-center py-10 gap-2">
+                  <span className="text-3xl opacity-30">🔍</span>
+                  <p className="text-white/25 text-sm">Tapez un nom ou filtrez par wilaya</p>
                 </div>
               ) : searchResults.length === 0 && !searchLoading ? (
-                <p className="text-center text-white/30 text-sm py-8">Aucun utilisateur trouvé</p>
+                <p className="text-center text-white/30 text-sm py-8">Aucun profil trouvé</p>
               ) : (
-                searchResults.map(u => (
-                  <div key={u.username} onClick={() => { navigate(`/profil/${u.username}`); closeSearch(); }} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.04] border-b border-white/[0.04]">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black ${u.role === "technicien" ? "bg-gradient-to-br from-blue-600 to-violet-600" : "bg-gradient-to-br from-violet-600 to-pink-600"}`}>
-                      {u.photo ? <img src={u.photo} alt={u.username} className="w-full h-full object-cover rounded-xl" /> : u.username?.slice(0, 2).toUpperCase()}
+                <>
+                  {searchResults.length > 0 && (
+                    <p className="text-[10px] text-white/20 px-4 pt-2 pb-1">
+                      {searchResults.length} résultat{searchResults.length > 1 ? "s" : ""} · triés par note
+                    </p>
+                  )}
+                  {searchResults.map((u, i) => (
+                    <div key={u.username} onClick={() => { navigate(`/profil/${u.username}`); closeSearch(); }} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.04] border-b border-white/[0.04]">
+                      <div className="relative flex-shrink-0">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black overflow-hidden ${u.role === "technicien" ? "bg-gradient-to-br from-blue-600 to-violet-600" : "bg-gradient-to-br from-violet-600 to-pink-600"}`}>
+                          {u.photo ? <img src={u.photo} alt={u.username} className="w-full h-full object-cover" /> : u.username?.slice(0, 2).toUpperCase()}
+                        </div>
+                        {i < 3 && u.moyenne > 0 && (
+                          <span className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full text-[8px] font-black text-black flex items-center justify-center">
+                            {i + 1}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{u.username}</p>
+                        <p className="text-xs text-white/35 truncate">
+                          {u.role === "technicien" ? "🔧" : "👤"} {u.role === "technicien" ? (u.specialite || "Technicien") : "Client"}
+                          {u.wilaya ? ` · 📍 ${u.wilaya}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0 text-right">
+                        {u.moyenne > 0 ? (
+                          <>
+                            <p className="text-xs text-yellow-400 font-semibold">⭐ {u.moyenne}</p>
+                            <p className="text-[10px] text-white/25">{u.totalNotes} avis</p>
+                          </>
+                        ) : (
+                          <p className="text-[10px] text-white/20">Pas de note</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-white">{u.username}</p>
-                      <p className="text-xs text-white/35">{u.role === "technicien" ? "🔧 Technicien" : "🛒 Client"}{u.ville ? ` · ${u.ville}` : ""}</p>
-                    </div>
-                    {u.moyenne && <span className="text-xs text-yellow-400">⭐ {u.moyenne}</span>}
-                  </div>
-                ))
+                  ))}
+                </>
               )}
             </div>
           </div>

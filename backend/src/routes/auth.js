@@ -2,40 +2,29 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import dns from "dns/promises";
-import { User } from "../models/Schemas.js";
 import nodemailer from "nodemailer";
+import { User } from "../models/Schemas.js";
 
 const router = express.Router();
-
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.EMAIL_PORT) || 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ Erreur email:", error.message);
-  } else {
-    console.log("✅ Email configuré");
-  }
-});
 
 function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  tls: { rejectUnauthorized: false },
+});
+
 async function sendVerificationCode(email, code, username) {
-  const mailOptions = {
-    from: process.env.EMAIL_USER,
+  await transporter.sendMail({
+    from: `"sellekni" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: "Code de vérification - sellekni",
     html: `
@@ -55,9 +44,8 @@ async function sendVerificationCode(email, code, username) {
           <p style="color: #94a3b8; text-align: center;">Ce code expire dans <strong>10 minutes</strong>.</p>
         </div>
       </div>
-    `
-  };
-  await transporter.sendMail(mailOptions);
+    `,
+  });
 }
 
 // ─── SIGNUP ────────────────────────────────────────────────────────────────────
@@ -108,7 +96,7 @@ router.post("/signup", async (req, res) => {
       await sendVerificationCode(email, verificationCode, username);
       console.log("✅ Email envoyé avec succès");
     } catch (emailError) {
-      console.log("⚠️ Email non envoyé, mais code disponible dans la console");
+      console.log("⚠️ Email non envoyé:", emailError.message);
     }
 
     res.status(201).json({
@@ -266,7 +254,7 @@ router.post("/forgot-password", async (req, res) => {
 
     try {
       await transporter.sendMail({
-        from: process.env.EMAIL_USER,
+        from: `"sellekni" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: "Réinitialisation de votre mot de passe — Sellekni",
         html: `
@@ -275,7 +263,7 @@ router.post("/forgot-password", async (req, res) => {
             <h2>Réinitialisation du mot de passe</h2>
             <p>Cliquez sur le lien pour réinitialiser votre mot de passe :</p>
             <a href="${resetLink}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;text-decoration:none;border-radius:10px;font-weight:bold;">
-              🔑 Réinitialiser mon mot de passe
+              Réinitialiser mon mot de passe
             </a>
             <p style="color:#555;margin-top:28px;font-size:12px;">Ce lien expire dans 30 minutes.</p>
           </div>

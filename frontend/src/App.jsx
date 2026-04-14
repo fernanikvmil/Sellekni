@@ -10,6 +10,8 @@ import Detailannonces from "./Detailannonces";
 import VerifyEmail from "./VerifyEmail";
 import Messages from "./Messages";
 import PublicProfile from "./PublicProfile";
+import Techniciens from "./Techniciens";
+import MapTechniciens from "./MapTechniciens";
 import { startHeartbeat } from "./api";
 
 function App() {
@@ -29,6 +31,8 @@ function App() {
       <Route path="/verify-email/:token" element={<VerifyEmail />} />
       <Route path="/messages" element={<Messages />} />
       <Route path="/profil/:username" element={<PublicProfile />} />
+      <Route path="/techniciens" element={<Techniciens/>}/>
+      <Route path="/map" element={<MapTechniciens/>}/>
       <Route path="/annonces" element={<Annonces/>}/>
       <Route path="/profile" element={<Profile/>}/>
       <Route path="/forum" element={<Forum/>}/>
