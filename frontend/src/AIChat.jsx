@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authHeaders } from "./api";
 
-const API_URL = "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "https://sellekni-backend.onrender.com";
 
 export default function AIChat() {
   const navigate = useNavigate();
@@ -80,8 +80,8 @@ export default function AIChat() {
         title="Assistant IA"
         style={{
           position: "fixed",
-          bottom: "28px",
-          left: "20px",
+          bottom: "80px",
+          right: "20px",
           width: 52,
           height: 52,
           borderRadius: "50%",
@@ -150,7 +150,7 @@ export default function AIChat() {
       {isOpen && (
         <>
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 sm:hidden" onClick={() => setIsOpen(false)} />
-          <div className="fixed bottom-0 left-0 right-0 sm:bottom-24 sm:left-5 sm:right-auto w-full sm:w-96 h-[82vh] sm:h-[600px] flex flex-col z-50 rounded-t-2xl sm:rounded-2xl overflow-hidden"
+          <div className="fixed bottom-0 left-0 right-0 sm:bottom-36 sm:right-5 sm:left-auto w-full sm:w-96 h-[82vh] sm:h-[520px] flex flex-col z-50 rounded-t-2xl sm:rounded-2xl overflow-hidden"
             style={{
               background: "linear-gradient(180deg,#0A031E 0%,#0E0520 100%)",
               border: "1px solid rgba(196,181,253,0.1)",
