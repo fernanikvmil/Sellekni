@@ -63,6 +63,8 @@ export default function AIChat() {
           buttonText: data.buttonText,
           suggestions: data.suggestions,
         }]);
+      } else {
+        setMessages(prev => [...prev, { role: "assistant", content: "Désolé, je n'ai pas pu répondre. Réessayez." }]);
       }
     } catch {
       setMessages(prev => [...prev, { role: "assistant", content: "Désolé, une erreur est survenue." }]);

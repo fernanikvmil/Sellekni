@@ -5,7 +5,7 @@ import { requireAuth } from "../middleware/auth.js";
 const router = express.Router();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-router.post("/chat", requireAuth, async (req, res) => {
+router.post("/chat", async (req, res) => {
   try {
     const { message } = req.body;
 
