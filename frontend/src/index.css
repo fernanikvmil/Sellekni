@@ -1,0 +1,65 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* ── Global purple gradient background ── */
+html, body {
+  background: linear-gradient(160deg, #13002E 0%, #2D1069 40%, #1E0855 70%, #13002E 100%);
+  background-attachment: fixed;
+  min-height: 100%;
+}
+
+/* ── Theme: Deep Purple + Violet #C4B5FD ── */
+:root {
+  --accent:       #C4B5FD;
+  --accent-gold:  #A78BFA;
+  --accent-dim:   rgba(196,181,253,0.3);
+  --accent-muted: rgba(196,181,253,0.55);
+  --accent-faint: rgba(196,181,253,0.1);
+  --bg-primary:   #0E0520;
+  --bg-card:      #0A031E;
+  --bg-card-2:    #07021A;
+}
+
+/* ── Violet glow utility ── */
+.frost-glow {
+  box-shadow: 0 0 30px rgba(196,181,253,0.22), 0 0 70px rgba(196,181,253,0.10);
+}
+.frost-border {
+  border-color: rgba(196,181,253,0.28);
+}
+
+/* ── Keyframes uniquement (impossible avec Tailwind seul) ── */
+
+@keyframes bellRing {
+  0%, 100% { transform-origin: top; }
+  15%  { transform: rotateZ(10deg); }
+  30%  { transform: rotateZ(-10deg); }
+  45%  { transform: rotateZ(5deg); }
+  60%  { transform: rotateZ(-5deg); }
+  75%  { transform: rotateZ(2deg); }
+}
+.bell-ring:hover .bell-icon { animation: bellRing 0.9s both; }
+
+@keyframes authGradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.auth-btn {
+  background: linear-gradient(-45deg, #13002E, #2D1069, #C4B5FD, #13002E);
+  background-size: 800% 400%;
+  padding: 0.55em 1.8em;
+  display: inline-block;
+  text-align: center;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #13002E;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .5s ease-in-out;
+  animation: authGradient 10s infinite cubic-bezier(.62, .28, .23, .99) both;
+}
+.auth-btn:hover  { animation: authGradient 3s infinite; transform: scale(1.05); }
+.auth-btn:active { animation: authGradient 3s infinite; transform: scale(0.8); }
