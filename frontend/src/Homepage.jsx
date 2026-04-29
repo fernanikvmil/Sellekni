@@ -21,6 +21,15 @@ export default function Homepage() {
   const [notifications, setNotifications] = useState([]);
   const [notifUnread, setNotifUnread] = useState(0);
   const notifRef = useRef(null);
+  const [stats, setStats] = useState({ techniciens: null, annonces: null, wilayas: null, satisfaction: null });
+
+  useEffect(() => {
+    const API = import.meta.env.VITE_API_URL || "https://sellekni-backend.onrender.com";
+    fetch(`${API}/api/stats`)
+      .then(r => r.json())
+      .then(data => setStats(data))
+      .catch(() => {});
+  }, []);
 
   const services = [
     { id: 1, name: "Plomberie", description: "Réparation et installation de vos équipements", icon: "🚰", color: "from-purple-500 to-violet-600" },
@@ -295,10 +304,10 @@ export default function Homepage() {
             {/* Grille de stats */}
             <div className="relative z-10 grid grid-cols-2 gap-3 w-full max-w-sm md:max-w-xs">
               {[
-                { icon: "👨‍🔧", label: "Techniciens", value: "500+", color: "from-violet-600/20 to-violet-500/10" },
-                { icon: "📋", label: "Annonces", value: "1 200+", color: "from-pink-600/20 to-pink-500/10" },
-                { icon: "🏙️", label: "Wilayas", value: "48", color: "from-sky-600/20 to-sky-500/10" },
-                { icon: "⭐", label: "Satisfaction", value: "98%", color: "from-amber-600/20 to-amber-500/10" },
+                { icon: "👨‍🔧", label: "Techniciens", value: stats.techniciens !== null ? `${stats.techniciens}` : "…", color: "from-violet-600/20 to-violet-500/10" },
+                { icon: "📋", label: "Annonces", value: stats.annonces !== null ? `${stats.annonces}` : "…", color: "from-pink-600/20 to-pink-500/10" },
+                { icon: "🏙️", label: "Wilayas", value: stats.wilayas !== null ? `${stats.wilayas}` : "…", color: "from-sky-600/20 to-sky-500/10" },
+                { icon: "⭐", label: "Satisfaction", value: stats.satisfaction !== null ? `${stats.satisfaction}%` : "Nouveau", color: "from-amber-600/20 to-amber-500/10" },
               ].map((stat, i) => (
                 <div key={i} className={`bg-gradient-to-br ${stat.color} border border-white/[0.08] rounded-2xl p-4 flex flex-col gap-2 backdrop-blur-sm`}
                   style={{ animation: `fadeUp 0.6s cubic-bezier(.22,1,.36,1) ${0.2 + i * 0.1}s both` }}>

@@ -15,6 +15,7 @@ import adminRoutes from './src/routes/adminpanel.js'
 import aiRoutes from "./src/routes/ai.js";
 import profileRoutes from "./src/routes/profile.js";
 import searchHistoryRoutes from './src/routes/searchHistory.js';
+import statsRoutes from './src/routes/stats.js';
 const PORT = process.env.PORT || 5000;
 const app = express();
 const allowedOrigins = [
@@ -57,6 +58,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/profile", profileRoutes);
 app.use('/api/search-history', searchHistoryRoutes);
+app.use('/api/stats', statsRoutes);
 
 connectDB()
 const server = app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
