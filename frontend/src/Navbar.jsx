@@ -579,7 +579,13 @@ useEffect(() => {
       <nav className="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-8 py-4 backdrop-blur-xl" style={{ background: "rgba(14,5,32,0.92)", borderBottom: "1px solid rgba(196,181,253,0.12)" }}>
 
         <div className="flex items-center gap-2">
-          {/* Logo - toujours à gauche */}
+          {/* Hamburger à gauche - mobile uniquement */}
+          <div className="md:hidden">
+            <button onClick={() => setMobileMenuOpen(true)} className="text-white text-2xl w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
+              ☰
+            </button>
+          </div>
+          {/* Logo */}
           <div className="cursor-pointer flex items-center gap-2" onClick={() => navigate("/")}>
             <img src="/logo.png" alt="Sellekni" className="h-8 w-auto object-contain" />
             <span className="hidden sm:inline text-xl font-black text-[#C4B5FD] tracking-tight">Sellekni</span>
@@ -693,12 +699,6 @@ useEffect(() => {
             </>
           )}
 
-          {/* Hamburger — mobile uniquement, toujours à droite */}
-          <div className="md:hidden">
-            <button onClick={() => setMobileMenuOpen(true)} className="text-white text-2xl w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
-              ☰
-            </button>
-          </div>
         </div>
       </nav>
 
