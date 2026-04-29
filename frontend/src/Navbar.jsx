@@ -585,8 +585,8 @@ useEffect(() => {
         </div>
 
         <div className="cursor-pointer md:relative md:left-0 md:translate-x-0 flex items-center gap-2" onClick={() => navigate("/")}>
-          <img src="/logo.png" alt="Sellekni" className="h-9 w-auto object-contain" />
-          <span className="text-xl font-black text-[#C4B5FD] tracking-tight">Sellekni</span>
+          <img src="/logo.png" alt="Sellekni" className="h-8 w-auto object-contain" />
+          <span className="hidden sm:inline text-xl font-black text-[#C4B5FD] tracking-tight">Sellekni</span>
         </div>
 
         <div className="hidden md:flex md:flex-1 md:justify-center">

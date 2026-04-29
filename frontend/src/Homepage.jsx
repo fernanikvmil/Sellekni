@@ -282,17 +282,33 @@ export default function Homepage() {
             </div>
           </div>
 
-                   {/* Partie droite - Image */}
-          <div className="relative flex items-center justify-center h-[280px] sm:h-[480px] overflow-hidden">
-            {/* Cercles décoratifs */}
-            <div className="rotate-slow absolute w-[220px] h-[220px] sm:w-[380px] sm:h-[380px] rounded-full border border-violet-600/10" />
-            <div className="rotate-slow absolute w-[180px] h-[180px] sm:w-[300px] sm:h-[300px] rounded-full border border-pink-500/10" style={{ animationDirection: "reverse", animationDuration: "30s" }} />
-            <div className="absolute w-28 h-28 sm:w-48 sm:h-48 rounded-full bg-violet-600/20 blur-[60px]" />
-            <div className="absolute w-20 h-20 sm:w-32 sm:h-32 rounded-full bg-pink-500/15 blur-[40px]" />
+          {/* Partie droite - Stats */}
+          <div className="relative flex items-center justify-center">
 
-            {/* Icônes flottantes */}
+            {/* Halos - desktop seulement */}
+            <div className="hidden md:block">
+              <div className="rotate-slow absolute w-[380px] h-[380px] rounded-full border border-violet-600/10" />
+              <div className="rotate-slow absolute w-[300px] h-[300px] rounded-full border border-pink-500/10" style={{ animationDirection: "reverse", animationDuration: "30s" }} />
+              <div className="absolute w-48 h-48 rounded-full bg-violet-600/15 blur-[80px]" />
+            </div>
 
-        </div>
+            {/* Grille de stats */}
+            <div className="relative z-10 grid grid-cols-2 gap-3 w-full max-w-sm md:max-w-xs">
+              {[
+                { icon: "👨‍🔧", label: "Techniciens", value: "500+", color: "from-violet-600/20 to-violet-500/10" },
+                { icon: "📋", label: "Annonces", value: "1 200+", color: "from-pink-600/20 to-pink-500/10" },
+                { icon: "🏙️", label: "Wilayas", value: "48", color: "from-sky-600/20 to-sky-500/10" },
+                { icon: "⭐", label: "Satisfaction", value: "98%", color: "from-amber-600/20 to-amber-500/10" },
+              ].map((stat, i) => (
+                <div key={i} className={`bg-gradient-to-br ${stat.color} border border-white/[0.08] rounded-2xl p-4 flex flex-col gap-2 backdrop-blur-sm`}
+                  style={{ animation: `fadeUp 0.6s cubic-bezier(.22,1,.36,1) ${0.2 + i * 0.1}s both` }}>
+                  <span className="text-2xl">{stat.icon}</span>
+                  <p className="text-2xl font-black text-white leading-none">{stat.value}</p>
+                  <p className="text-xs text-white/40 font-medium">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
          </div>
       </section>
 
