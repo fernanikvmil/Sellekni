@@ -578,15 +578,12 @@ useEffect(() => {
       {/* NAVBAR */}
       <nav className="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-8 py-4 backdrop-blur-xl" style={{ background: "rgba(14,5,32,0.92)", borderBottom: "1px solid rgba(196,181,253,0.12)" }}>
 
-        <div className="md:hidden">
-          <button onClick={() => setMobileMenuOpen(true)} className="text-white text-2xl w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
-            ☰
-          </button>
-        </div>
-
-        <div className="cursor-pointer md:relative md:left-0 md:translate-x-0 flex items-center gap-2" onClick={() => navigate("/")}>
-          <img src="/logo.png" alt="Sellekni" className="h-8 w-auto object-contain" />
-          <span className="hidden sm:inline text-xl font-black text-[#C4B5FD] tracking-tight">Sellekni</span>
+        <div className="flex items-center gap-2">
+          {/* Logo - toujours à gauche */}
+          <div className="cursor-pointer flex items-center gap-2" onClick={() => navigate("/")}>
+            <img src="/logo.png" alt="Sellekni" className="h-8 w-auto object-contain" />
+            <span className="hidden sm:inline text-xl font-black text-[#C4B5FD] tracking-tight">Sellekni</span>
+          </div>
         </div>
 
         <div className="hidden md:flex md:flex-1 md:justify-center">
@@ -695,6 +692,13 @@ useEffect(() => {
               <AuthBtn onClick={() => navigate("/signin")}>Inscription</AuthBtn>
             </>
           )}
+
+          {/* Hamburger — mobile uniquement, toujours à droite */}
+          <div className="md:hidden">
+            <button onClick={() => setMobileMenuOpen(true)} className="text-white text-2xl w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
+              ☰
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -1273,7 +1277,7 @@ useEffect(() => {
         @keyframes slideInLeft { from { transform: translateX(-100%); } to { transform: translateX(0); } }
         .animate-slide-in-left { animation: slideInLeft 0.3s ease-out; }
       `}</style>
-      <AIChat />
+      {location.pathname !== "/messages" && <AIChat />}
             {/* Modal d'agrandissement d'image */}
       {zoomedImage && (
         <div 
