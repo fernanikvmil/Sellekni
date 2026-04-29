@@ -296,24 +296,28 @@ export default function Homepage() {
 
             {/* Halos - desktop seulement */}
             <div className="hidden md:block">
-              <div className="rotate-slow absolute w-[380px] h-[380px] rounded-full border border-violet-600/10" />
-              <div className="rotate-slow absolute w-[300px] h-[300px] rounded-full border border-pink-500/10" style={{ animationDirection: "reverse", animationDuration: "30s" }} />
-              <div className="absolute w-48 h-48 rounded-full bg-violet-600/15 blur-[80px]" />
+              <div className="rotate-slow absolute w-[460px] h-[460px] rounded-full border border-violet-500/10" />
+              <div className="rotate-slow absolute w-[360px] h-[360px] rounded-full border border-pink-500/10" style={{ animationDirection: "reverse", animationDuration: "30s" }} />
+              <div className="absolute w-72 h-72 rounded-full bg-violet-600/10 blur-[100px]" />
             </div>
 
             {/* Grille de stats */}
-            <div className="relative z-10 grid grid-cols-2 gap-3 w-full max-w-sm md:max-w-xs">
+            <div className="relative z-10 grid grid-cols-2 gap-3 md:gap-5 w-full max-w-sm md:max-w-md">
               {[
-                { icon: "👨‍🔧", label: "Techniciens", value: stats.techniciens !== null ? `${stats.techniciens}` : "…", color: "from-violet-600/20 to-violet-500/10" },
-                { icon: "📋", label: "Annonces", value: stats.annonces !== null ? `${stats.annonces}` : "…", color: "from-pink-600/20 to-pink-500/10" },
-                { icon: "🏙️", label: "Wilayas", value: stats.wilayas !== null ? `${stats.wilayas}` : "…", color: "from-sky-600/20 to-sky-500/10" },
-                { icon: "⭐", label: "Satisfaction", value: stats.satisfaction !== null ? `${stats.satisfaction}%` : "Nouveau", color: "from-amber-600/20 to-amber-500/10" },
+                { icon: "👨‍🔧", label: "Techniciens", value: stats.techniciens !== null ? `${stats.techniciens}` : "…", color: "from-violet-600/25 to-violet-800/10", border: "border-violet-500/20", glow: "rgba(139,92,246,0.15)" },
+                { icon: "📋", label: "Annonces",     value: stats.annonces     !== null ? `${stats.annonces}`     : "…", color: "from-pink-600/25 to-pink-800/10",   border: "border-pink-500/20",   glow: "rgba(236,72,153,0.15)"  },
+                { icon: "🏙️", label: "Wilayas",      value: stats.wilayas      !== null ? `${stats.wilayas}`      : "…", color: "from-sky-600/25 to-sky-800/10",     border: "border-sky-500/20",    glow: "rgba(14,165,233,0.15)"  },
+                { icon: "⭐", label: "Satisfaction",  value: stats.satisfaction !== null ? `${stats.satisfaction}%`: "Nouveau", color: "from-amber-600/25 to-amber-800/10", border: "border-amber-500/20", glow: "rgba(245,158,11,0.15)" },
               ].map((stat, i) => (
-                <div key={i} className={`bg-gradient-to-br ${stat.color} border border-white/[0.08] rounded-2xl p-4 flex flex-col gap-2 backdrop-blur-sm`}
-                  style={{ animation: `fadeUp 0.6s cubic-bezier(.22,1,.36,1) ${0.2 + i * 0.1}s both` }}>
-                  <span className="text-2xl">{stat.icon}</span>
-                  <p className="text-2xl font-black text-white leading-none">{stat.value}</p>
-                  <p className="text-xs text-white/40 font-medium">{stat.label}</p>
+                <div key={i}
+                  className={`bg-gradient-to-br ${stat.color} border ${stat.border} rounded-2xl md:rounded-3xl p-4 md:p-7 flex flex-col gap-2 md:gap-3 backdrop-blur-sm`}
+                  style={{
+                    animation: `fadeUp 0.6s cubic-bezier(.22,1,.36,1) ${0.2 + i * 0.1}s both`,
+                    boxShadow: `0 8px 32px ${stat.glow}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                  }}>
+                  <span className="text-2xl md:text-3xl">{stat.icon}</span>
+                  <p className="text-2xl md:text-4xl font-black text-white leading-none tracking-tight">{stat.value}</p>
+                  <p className="text-xs md:text-sm text-white/40 font-medium">{stat.label}</p>
                 </div>
               ))}
             </div>
