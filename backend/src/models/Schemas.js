@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const commentaireSchema = new mongoose.Schema({
   contenu: { type: String, required: true },
   auteur:  { type: String, required: true },
+  photo:   { type: String, default: null }, 
   role:    { type: String },
 }, { timestamps: true });
 

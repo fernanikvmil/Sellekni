@@ -155,7 +155,7 @@ export default function AnnonceDetail() {
   const istech = annonce.role === "technicien";
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
+    <div className="min-h-screen bg-transparent text-white">
 
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
@@ -256,52 +256,56 @@ export default function AnnonceDetail() {
           {/* Sidebar */}
           <div className="flex flex-col gap-4">
 
-            {/* Vendeur */}
-            <div
-              onClick={() => navigate(`/profil/${annonce.auteur}`)}
-              className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] cursor-pointer hover:border-violet-600/30 hover:bg-white/[0.05] transition-all duration-200"
-            >
-              <h2 className="text-xs text-white/30 uppercase tracking-widest mb-4">Vendeur</h2>
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black overflow-hidden ${
-                  istech ? "bg-gradient-to-br from-violet-600 to-violet-600" : "bg-gradient-to-br from-violet-600 to-pink-600"
-                }`}>
-                  {vendeur?.photo ? (
-                    <img
-                      src={vendeur.photo}
-                      alt={annonce.auteur}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                        e.target.parentElement.textContent = annonce.auteur?.slice(0, 2).toUpperCase();
-                      }}
-                    />
-                  ) : (
-                    annonce.auteur?.slice(0, 2).toUpperCase()
-                  )}
-                </div>
-                <div>
-                  <p className="font-semibold text-sm">{annonce.auteur}</p>
-                  <div className="flex items-center gap-2 flex-wrap mt-1">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${istech ? "bg-violet-500/15 text-violet-300" : "bg-violet-600/15 text-violet-300"}`}>
-                      {annonce.role}
-                    </span>
-                    {vendeur?.moyenne > 0 && (
-                      <span className="text-[10px] text-yellow-400">
-                        ★ {vendeur.moyenne} ({vendeur.totalNotes || 0} avis)
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-white/30">
-                  <span className="w-2 h-2 rounded-full bg-green-500" />
-                  Membre actif
-                </div>
-                <span className="text-xs text-violet-400/60 hover:text-violet-400 transition-colors">Voir le profil →</span>
-              </div>
-            </div>
+       {/* Vendeur */}
+<div
+  onClick={() => navigate(`/profil/${annonce.auteur}`)}
+  className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08] cursor-pointer hover:border-violet-600/30 hover:bg-white/[0.05] transition-all duration-200"
+>
+  <h2 className="text-xs text-white/30 uppercase tracking-widest mb-4">Vendeur</h2>
+  <div className="flex items-center gap-3 mb-4">
+    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black overflow-hidden flex-shrink-0 ${
+      istech ? "bg-gradient-to-br from-violet-600 to-violet-600" : "bg-gradient-to-br from-violet-600 to-pink-600"
+    }`}>
+      {vendeur?.photo && vendeur.photo !== "null" && vendeur.photo.trim() !== "" ? (
+        <img
+          src={vendeur.photo}
+          alt={annonce.auteur}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            console.error("Erreur chargement photo:", vendeur.photo);
+            e.target.style.display = "none";
+            if (e.target.parentElement) {
+              e.target.parentElement.textContent = annonce.auteur?.slice(0, 2).toUpperCase();
+              e.target.parentElement.classList.add("flex", "items-center", "justify-center");
+            }
+          }}
+        />
+      ) : (
+        <span className="text-white">{annonce.auteur?.slice(0, 2).toUpperCase()}</span>
+      )}
+    </div>
+    <div>
+      <p className="font-semibold text-sm">{annonce.auteur}</p>
+      <div className="flex items-center gap-2 flex-wrap mt-1">
+        <span className={`text-[10px] px-2 py-0.5 rounded-full ${istech ? "bg-violet-500/15 text-violet-300" : "bg-violet-600/15 text-violet-300"}`}>
+          {annonce.role || (istech ? "technicien" : "client")}
+        </span>
+        {vendeur?.moyenne > 0 && (
+          <span className="text-[10px] text-yellow-400">
+            ★ {vendeur.moyenne.toFixed(1)} ({vendeur.totalNotes || 0} avis)
+          </span>
+        )}
+      </div>
+    </div>
+  </div>
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-2 text-xs text-white/30">
+      <span className="w-2 h-2 rounded-full bg-green-500" />
+      Membre actif
+    </div>
+    <span className="text-xs text-violet-400/60 hover:text-violet-400 transition-colors">Voir le profil →</span>
+  </div>
+</div>
 
             {/* Modifier + Supprimer */}
             {user?.username === annonce.auteur && (
@@ -370,49 +374,68 @@ export default function AnnonceDetail() {
               )}
             </div>
 
-            {/* Commentaires */}
-            <div className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
-              <h2 className="text-xs text-white/30 uppercase tracking-widest mb-4">Commentaires ({commentaires.length})</h2>
-              <div className="flex flex-col gap-3 mb-4 max-h-64 overflow-y-auto pr-1">
-                {commentaires.length === 0 ? (
-                  <p className="text-white/25 text-sm text-center py-4">Aucun commentaire pour l'instant</p>
-                ) : (
-                  commentaires.map((c, i) => (
-                    <div key={i} className="flex gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${c.role === "technicien" ? "bg-gradient-to-br from-violet-600 to-violet-600" : "bg-gradient-to-br from-violet-600 to-pink-600"}`}>
-                        {c.auteur?.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-semibold text-white/80">{c.auteur}</span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${c.role === "technicien" ? "bg-violet-500/15 text-violet-300" : "bg-violet-600/15 text-violet-300"}`}>{c.role}</span>
-                        </div>
-                        <p className="text-white/60 text-sm">{c.contenu}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-              {user ? (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={commentaire}
-                    onChange={(e) => setCommentaire(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleCommentaire()}
-                    placeholder="Écrire un commentaire..."
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm text-white placeholder-white/20 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:border-violet-600/60 focus:ring-2 focus:ring-violet-600/15 transition-all"
-                  />
-                  <button onClick={handleCommentaire} disabled={!commentaire.trim()} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-violet-700 to-violet-600 hover:from-violet-600 hover:to-violet-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
-                    →
-                  </button>
-                </div>
-              ) : (
-                <p className="text-xs text-white/30 text-center">
-                  <span onClick={() => navigate("/login")} className="text-violet-400 cursor-pointer hover:text-violet-300">Connectez-vous</span> pour commenter
-                </p>
-              )}
+           {/* Commentaires */}
+<div className="p-5 rounded-2xl bg-white/[0.03] border border-white/[0.08]">
+  <h2 className="text-xs text-white/30 uppercase tracking-widest mb-4">Commentaires ({commentaires.length})</h2>
+  <div className="flex flex-col gap-3 mb-4 max-h-64 overflow-y-auto pr-1">
+    {commentaires.length === 0 ? (
+      <p className="text-white/25 text-sm text-center py-4">Aucun commentaire pour l'instant</p>
+    ) : (
+      commentaires.map((c, i) => (
+        <div key={i} className="flex gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+          {/* Avatar avec photo */}
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 overflow-hidden ${
+            c.role === "technicien" ? "bg-gradient-to-br from-violet-600 to-violet-600" : "bg-gradient-to-br from-violet-600 to-pink-600"
+          }`}>
+            {c.photo && c.photo !== "null" && c.photo.trim() !== "" ? (
+              <img 
+                src={c.photo} 
+                alt={c.auteur} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = "none";
+                  if (e.target.parentElement) {
+                    e.target.parentElement.textContent = c.auteur?.slice(0, 2).toUpperCase();
+                  }
+                }}
+              />
+            ) : (
+              c.auteur?.slice(0, 2).toUpperCase()
+            )}
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-semibold text-white/80">{c.auteur}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${c.role === "technicien" ? "bg-violet-500/15 text-violet-300" : "bg-violet-600/15 text-violet-300"}`}>
+                {c.role}
+              </span>
             </div>
+            <p className="text-white/60 text-sm">{c.contenu}</p>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+  {user ? (
+    <div className="flex gap-2">
+      <input
+        type="text"
+        value={commentaire}
+        onChange={(e) => setCommentaire(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleCommentaire()}
+        placeholder="Écrire un commentaire..."
+        className="flex-1 px-4 py-2.5 rounded-xl text-sm text-white placeholder-white/20 bg-white/[0.04] border border-white/[0.08] focus:outline-none focus:border-violet-600/60 focus:ring-2 focus:ring-violet-600/15 transition-all"
+      />
+      <button onClick={handleCommentaire} disabled={!commentaire.trim()} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-violet-700 to-violet-600 hover:from-violet-600 hover:to-violet-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+        →
+      </button>
+    </div>
+  ) : (
+    <p className="text-xs text-white/30 text-center">
+      <span onClick={() => navigate("/login")} className="text-violet-400 cursor-pointer hover:text-violet-300">Connectez-vous</span> pour commenter
+    </p>
+  )}
+</div>
           </div>
         </div>
       </div>

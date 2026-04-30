@@ -1,12 +1,9 @@
 import express from 'express'
-import multer from 'multer';
 import { Annonce, Notification, User } from '../models/Schemas.js'
 
 import { requireAuth } from '../middleware/auth.js';
 import { upload } from '../library/cloudinary.js';
-import { moderateImage, moderateImageBuffer } from '../middleware/moderation.js';
-
-const memUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+import { moderateImage, moderateImageWithSightEngine } from '../middleware/moderation.js';
 
 const router = express.Router()
 
@@ -22,10 +19,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/check-image", memUpload.single("image"), async (req, res) => {
+router.post("/check-image", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ safe: false, message: "Aucune image" });
-    const result = await moderateImageBuffer(req.file.buffer, req.file.mimetype);
+    const imageUrl = req.file.secure_url || req.file.path;
+    const result = await moderateImageWithSightEngine(imageUrl);
     res.json(result);
   } catch (err) {
     console.error(err);
@@ -62,14 +60,14 @@ router.get("/:id", async (req, res) => {
 
     let vendeur = null;
     if (annonce.auteur) {
-      const user = await User.findOne({ username: annonce.auteur });
+      const user = await User.findOne({ username: annonce.auteur }).select('username photo role moyenne totalNotes');
       if (user) {
         vendeur = {
           username: user.username,
-          photo: user.photo,
+          photo: user.photo || null,  // ← Assurez-vous que c'est null si pas de photo
           role: user.role,
-          moyenne: user.moyenne,
-          totalNotes: user.totalNotes
+          moyenne: user.moyenne || 0,
+          totalNotes: user.totalNotes || 0
         };
       }
     }
@@ -89,9 +87,20 @@ router.post("/:id/commentaires", requireAuth, async (req, res) => {
     const annonce = await Annonce.findById(req.params.id);
     if (!annonce) return res.status(404).json({ message: "Annonce introuvable" });
     if (!contenu) return res.status(400).json({ message: "Commentaire vide" });
-    annonce.commentaires.push({ contenu, auteur, role });
+    
+    // Récupérer la photo de l'utilisateur qui commente
+    const user = await User.findOne({ username: auteur });
+    const userPhoto = user?.photo || null;
+    
+    annonce.commentaires.push({ 
+      contenu, 
+      auteur, 
+      role,
+      photo: userPhoto  // ← Ajouter la photo
+    });
     await annonce.save();
     const commentaire = annonce.commentaires[annonce.commentaires.length - 1];
+    
     if (auteur !== annonce.auteur) {
       await Notification.create({
         destinataire: annonce.auteur,
@@ -167,7 +176,7 @@ router.post("/:id/signaler", requireAuth, async (req, res) => {
     await annonce.save();
     res.json({ message: "Annonce signalée" });
   } catch (err) {
-    res.status(500).json({ message: "Erreur serveur", error: err.message });
+    res.status(500).json({ message: "Erreur serveur", error: err.message });	
   }
 });
 
