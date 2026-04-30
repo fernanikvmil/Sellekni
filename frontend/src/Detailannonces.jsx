@@ -155,8 +155,8 @@ export default function AnnonceDetail() {
   const istech = annonce.role === "technicien";
 
   return (
-<div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center overflow-hidden relative">
-      <style>{`
+<div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
+        <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
         @keyframes spin { to { transform:rotate(360deg); } }
         .fade-up { animation: fadeUp 0.5s cubic-bezier(.22,1,.36,1) forwards; }
