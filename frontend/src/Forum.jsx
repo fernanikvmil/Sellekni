@@ -143,17 +143,17 @@ function PostCard({ post, user, liked, commentsOpen, commentInput, onLike, onTog
       {commentsOpen && (
         <div className="px-4 pb-4 pt-1 border-t border-white/[0.05]" onClick={e => e.stopPropagation()}>
           {post.commentaires?.length > 0 && (
-            <div className="space-y-2 mb-3">
+            <div className="space-y-3 mb-4">
               {post.commentaires.map((c, ci) => (
-                <div key={ci} className="flex gap-2.5 items-start">
-                  <div className={`w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center text-[8px] font-black overflow-hidden ${!c.auteurPhoto ? avatarBg(c.role) : ""}`}>
+                <div key={ci} className="flex gap-3 items-start">
+                  <div className={`w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center text-[10px] font-black overflow-hidden ${!c.auteurPhoto ? avatarBg(c.role) : ""}`}>
                     {c.auteurPhoto
                       ? <img src={c.auteurPhoto} alt={c.auteur} className="w-full h-full object-cover" onError={e => { e.currentTarget.style.display="none"; }} />
                       : c.auteur?.slice(0, 2).toUpperCase()}
                   </div>
-                  <div className="flex-1 px-3 py-1.5 rounded-xl bg-[#07021A] border border-[rgba(196,181,253,0.08)]">
-                    <span className="text-[10px] font-bold text-white/65">{c.auteur} </span>
-                    <span className="text-[10px] text-white/50">{c.contenu}</span>
+                  <div className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#07021A] border border-[rgba(196,181,253,0.13)]">
+                    <p className="text-xs font-bold text-white/80 mb-0.5">{c.auteur}</p>
+                    <p className="text-sm text-white/65 leading-relaxed">{c.contenu}</p>
                   </div>
                 </div>
               ))}
