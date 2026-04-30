@@ -428,7 +428,7 @@ export default function MapTechniciens() {
   );
 
   return (
-    <div className="min-h-screen bg-transparent text-white flex flex-col">
+    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
       <style>{`.custom-scroll::-webkit-scrollbar{width:4px}.custom-scroll::-webkit-scrollbar-track{background:transparent}.custom-scroll::-webkit-scrollbar-thumb{background:rgba(196,181,253,0.3);border-radius:99px}.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}`}</style>
       <Navbar user={user} />
 

@@ -345,7 +345,7 @@ export default function Annonces() {
   const hasActiveFilter = filters.prixMin || filters.prixMax || filters.wilaya || filters.date || filters.categorie;
 
   return (
-    <div className="min-h-screen bg-transparent text-white">
+    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
       {moderationAlert && (
         <AlerteModeration
           violations={moderationAlert}
