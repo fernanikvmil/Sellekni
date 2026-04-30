@@ -78,7 +78,10 @@ router.post("/signup", async (req, res) => {
     console.log("=========================================");
 
     try {
-      await sendVerificationCodeEmail(email, verificationCode, username);
+      await Promise.race([
+        sendVerificationCodeEmail(email, verificationCode, username),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 10000))
+      ]);
       console.log("✅ Email envoyé avec succès");
     } catch (emailError) {
       console.log("⚠️ Email non envoyé:", emailError.message);
@@ -150,10 +153,13 @@ router.post("/resend-code", async (req, res) => {
     console.log("=========================================");
 
     try {
-      await sendVerificationCodeEmail(email, newCode, user.username);
+      await Promise.race([
+        sendVerificationCodeEmail(email, newCode, user.username),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 10000))
+      ]);
       console.log("✅ Email renvoyé");
     } catch (emailError) {
-      console.log("⚠️ Email non envoyé");
+      console.log("⚠️ Email non envoyé:", emailError.message);
     }
 
     res.json({ message: "Nouveau code envoyé !" });
