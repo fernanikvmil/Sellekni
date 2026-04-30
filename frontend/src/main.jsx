@@ -8,7 +8,7 @@ import "./index.css";
 const _originalFetch = window.fetch.bind(window);
 window.fetch = (url, options) => {
   if (typeof url === "string" && url.startsWith("/api/")) {
-    url = `${import.meta.env.VITE_BACKEND_URL || ""}${url}`;
+    url = `${import.meta.env.VITE_BACKEND_URL || "https://sellekni-backend.onrender.com"}${url}`;
   }
   return _originalFetch(url, options);
 };
