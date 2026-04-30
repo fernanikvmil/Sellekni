@@ -7,24 +7,20 @@ const SIGHTENGINE_API_SECRET = process.env.SIGHTENGINE_API_SECRET || '';
 
 /* ── Scoring partagé ─────────────────────────────────────── */
 function scoreResult(data) {
-  const isNudity      = (data.nudity?.raw      || 0) > 0.6;
-  const isPartialNud  = (data.nudity?.partial   || 0) > 0.6;
-  const isSuggestive  = (data.nudity?.suggestive|| 0) > 0.7;
-  const hasWeapon     = (data.weapon            || 0) > 0.5;
-  const hasDrugs      = (data.drugs             || 0) > 0.4;
-  const isOffensive   = (data.offensive?.prob   || 0) > 0.7;
-  const isGore        = (data.gore?.prob         || 0) > 0.7;
+  const isNudity     = (data.nudity?.raw       || 0) > 0.6;
+  const isPartialNud = (data.nudity?.partial    || 0) > 0.6;
+  const isSuggestive = (data.nudity?.suggestive || 0) > 0.7;
+  const hasWeapon    = (data.weapon             || 0) > 0.5;
+  const hasDrugs     = (data.drugs              || 0) > 0.4;
 
   return {
-    safe: !(isNudity || isPartialNud || isSuggestive || hasWeapon || hasDrugs || isOffensive || isGore),
+    safe: !(isNudity || isPartialNud || isSuggestive || hasWeapon || hasDrugs),
     details: {
       nudity:         isNudity,
       partial_nudity: isPartialNud,
       suggestive:     isSuggestive,
       weapon:         hasWeapon,
       drugs:          hasDrugs,
-      offensive:      isOffensive,
-      gore:           isGore,
     },
   };
 }
@@ -42,17 +38,15 @@ export async function moderateImageBuffer(buffer, mimetype = 'image/jpeg') {
       filename: 'image.jpg',
       contentType: mimetype,
     });
-    formData.append('models', 'nudity-2.0,wad,offensive,gore');
-    formData.append('api_user', SIGHTENGINE_API_USER);
-    formData.append('api_secret', SIGHTENGINE_API_SECRET);
+    formData.append('models', 'nudity-2.0,wad');
 
     const response = await axios.post(
-      'https://api.sightengine.com/1.0/check.json',
+      `https://api.sightengine.com/1.0/check.json?api_user=${SIGHTENGINE_API_USER}&api_secret=${SIGHTENGINE_API_SECRET}`,
       formData,
       { headers: formData.getHeaders(), timeout: 30000 }
     );
 
-    console.log('📊 SightEngine (buffer):', response.data?.nudity, response.data?.weapon, response.data?.drugs);
+    console.log('📊 SightEngine (buffer):', JSON.stringify(response.data?.nudity), 'weapon:', response.data?.weapon, 'drugs:', response.data?.drugs);
     return scoreResult(response.data);
   } catch (err) {
     console.error('Erreur SightEngine (buffer):', err.response?.data || err.message);
