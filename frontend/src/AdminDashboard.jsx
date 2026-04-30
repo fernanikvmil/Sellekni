@@ -32,33 +32,6 @@ function Toast({ toasts }) {
   );
 }
 
-// ─── ConfirmModal ─────────────────────────────────────────────────────────────
-function ConfirmModal({ open, message, onConfirm, onCancel }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[900] p-4">
-      <div className="bg-[#0A031E] border border-white/[0.1] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-        <p className="text-white font-semibold text-center mb-1">Confirmation</p>
-        <p className="text-white/60 text-sm text-center mb-6">{message}</p>
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl border border-white/10 text-white/60 text-sm hover:bg-white/5 transition-colors"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-semibold transition-colors"
-          >
-            Confirmer
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── RoleModal ────────────────────────────────────────────────────────────────
 function RoleModal({ open, user, onClose, onSave }) {
   const [role, setRole] = useState(user?.role || "client");
