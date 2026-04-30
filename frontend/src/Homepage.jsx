@@ -361,7 +361,14 @@ export default function Homepage() {
             {services.map((service) => (
               <div
                 key={service.id}
-                className="service-card bg-white/[0.03] border border-white/[0.08] rounded-xl p-3 cursor-pointer hover:bg-white/[0.06] transition-all duration-300">
+                className="service-card cursor-pointer transition-all duration-300 rounded-xl p-3"
+                style={{
+                  position: "relative", overflow: "hidden", isolation: "isolate",
+                  background: "rgba(196,181,253,0.04)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(196,181,253,0.06) inset",
+                  border: "1px solid transparent",
+                  backgroundClip: "padding-box",
+                }}>
                 <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${service.color} flex items-center justify-center mb-2 text-xl mx-auto`}>
                   {service.icon}
                 </div>
@@ -384,7 +391,12 @@ export default function Homepage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {steps.map((step) => (
-              <div key={step.number} className="step-card bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 text-center">
+              <div key={step.number} className="step-card rounded-2xl p-6 text-center" style={{
+                position: "relative", overflow: "hidden", isolation: "isolate",
+                background: "rgba(196,181,253,0.04)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(196,181,253,0.07) inset",
+                backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.01) 50%, rgba(255,255,255,0.05) 100%)",
+              }}>
                 <div className="relative inline-block mb-4">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-pink-600 flex items-center justify-center text-2xl mx-auto">
                     {step.icon}
@@ -406,7 +418,12 @@ export default function Homepage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map((feature, idx) => (
-              <div key={idx} className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-5 text-center">
+              <div key={idx} className="rounded-xl p-5 text-center" style={{
+                position: "relative", overflow: "hidden", isolation: "isolate",
+                background: "rgba(196,181,253,0.04)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(196,181,253,0.07) inset",
+                backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.01) 50%, rgba(255,255,255,0.05) 100%)",
+              }}>
                 <div className="text-2xl mb-3">{feature.icon}</div>
                 <h3 className="text-sm font-semibold text-white mb-1">{feature.title}</h3>
                 <p className="text-white/30 text-xs">{feature.description}</p>
