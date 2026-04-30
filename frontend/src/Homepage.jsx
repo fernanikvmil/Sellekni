@@ -436,7 +436,12 @@ export default function Homepage() {
       {/* ── CTA SECTION ── */}
       <section className="relative z-10 py-16 px-5 sm:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-gradient-to-r from-violet-600/10 via-transparent to-violet-600/10 rounded-3xl p-8 border border-violet-600/20">
+          <div className="rounded-3xl p-8" style={{
+            position: "relative", overflow: "hidden", isolation: "isolate",
+            background: "rgba(196,181,253,0.04)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(196,181,253,0.07) inset",
+            backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.01) 50%, rgba(255,255,255,0.06) 100%)",
+          }}>
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
               Prêt à {user?.role === "technicien" ? "proposer vos services" : "trouver un professionnel"} ?
             </h2>
