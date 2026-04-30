@@ -84,7 +84,7 @@ router.get("/:username", async (req, res) => {
     if (!user) return res.status(404).json({ message: "Utilisateur introuvable" });
 
 
-    const annonces = await Annonce.find({ auteur: req.params.username }).sort({ createdAt: -1 });
+    const annonces = await Annonce.find({ auteur: req.params.username, deleted: { $ne: true } }).sort({ createdAt: -1 });
     const postsCount = await Post.countDocuments({ auteur: req.params.username });
     const notations = user.notations || [];
     const moyenne = notations.length
