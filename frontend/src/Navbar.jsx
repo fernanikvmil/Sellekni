@@ -181,22 +181,42 @@ const modalRef = useRef(null);
       .catch(() => setNotifLoading(false));
   }, [notifOpen, user]);
 
-  const markNotificationAsRead = async (notifId) => {
-    try {
-      await fetch(`/api/notifications/${notifId}/lu`, { method: "PATCH", headers: authHeaders() });
-      setNotifications(prev => prev.map(n => n._id === notifId ? { ...n, lu: true } : n));
-      setNotifUnread(prev => Math.max(0, prev - 1));
-    } catch (err) { console.error(err); }
-  };
+ const markNotificationAsRead = async (notifId) => {
+  try {
+    await fetch(`/api/notifications/${notifId}/lu`, { method: "PATCH", headers: authHeaders() });
+    setNotifications(prev => prev.map(n => n._id === notifId ? { ...n, lu: true } : n));
+    setNotifUnread(prev => Math.max(0, prev - 1));
+  } catch (err) { 
+    console.error(err); 
+  }
+};
 
-  const markAllRead = async () => {
-    if (!user || notifUnread === 0) return;
-    try {
-      await fetch(`/api/notifications/${user.username}/tout-lire`, { method: "PATCH", headers: authHeaders() });
-      setNotifUnread(0);
-      setNotifications(prev => prev.map(n => ({ ...n, lu: true })));
-    } catch (err) { console.error(err); }
-  };
+const markAllRead = async (e) => {
+  // ⚠️ Empêcher la propagation pour éviter la fermeture du panneau
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  
+  if (!user || notifUnread === 0) return;
+  
+  try {
+    await fetch(`/api/notifications/${user.username}/tout-lire`, { 
+      method: "PATCH", 
+      headers: authHeaders() 
+    });
+    
+    // Mettre à jour l'état local
+    setNotifUnread(0);
+    setNotifications(prev => prev.map(n => ({ ...n, lu: true })));
+    
+    // Optionnel : afficher un petit feedback
+    console.log("Toutes les notifications ont été marquées comme lues");
+    
+  } catch (err) { 
+    console.error("Erreur lors du marquage tout lu:", err); 
+  }
+};
 
   // 💬 CHAT — polling 3s
   useEffect(() => {
@@ -222,20 +242,32 @@ const modalRef = useRef(null);
   }, [chatOpen, user, selectedConv?._id]);
 useEffect(() => {
   const handleClickOutside = (event) => {
+    // 🔥 IGNORER LES CLICS DANS LE PANNEAU MOBILE DES NOTIFICATIONS
+    const mobileNotifPanel = document.querySelector('.mobile-notif-panel');
+    if (mobileNotifPanel && mobileNotifPanel.contains(event.target)) {
+      return; // Ne rien faire si on clique dans le panneau mobile
+    }
+    
+    // 🔥 VÉRIFICATION : Si le clic est sur le bouton "Tout lire" ou ses descendants
+    const isOnMarkAllButton = event.target.closest('button')?.textContent?.includes('Tout') ||
+                               event.target.closest('[data-mark-all="true"]') !== null;
+    
+    if (isOnMarkAllButton) {
+      return;
+    }
+    
     const isInsideProfile = profileRef.current?.contains(event.target);
     const isInsideNotif = notifRef.current?.contains(event.target);
     const isInsideChat = chatRef.current?.contains(event.target);
     const isInsideModal = modalRef.current?.contains(event.target);
     const isInsidePendingModal = document.getElementById('pending-modal')?.contains(event.target);
-    const isInsideZoomModal = document.getElementById('zoom-modal')?.contains(event.target); // ← AJOUTEZ
+    const isInsideZoomModal = document.getElementById('zoom-modal')?.contains(event.target);
 
-    // 🔥 si clique dans modal ou modal pending ou zoom modal → NE RIEN FAIRE
-    if (isInsideModal || isInsidePendingModal || isInsideZoomModal) return; // ← AJOUTEZ isInsideZoomModal
+    if (isInsideModal || isInsidePendingModal || isInsideZoomModal) return;
 
     if (!isInsideProfile) setProfileOpen(false);
     if (!isInsideNotif) setNotifOpen(false);
 
-    // ⚠️ ferme chat seulement si pas dans chat ET pas de fichiers en attente
     if (!isInsideChat && pendingFiles.length === 0) {
       setChatOpen(false);
       setSelectedConv(null);
@@ -467,14 +499,41 @@ useEffect(() => {
   // Keep legacy helper for any place still using getNotificationIcon
   const getNotificationIcon = (type) => getNotificationMeta(type).icon;
 
-  const getNotificationAction = (notif) => {
-    if (notif.type === "commentaire_annonce" && notif.postId)  return () => navigate(`/annonces/${notif.postId}`);
-    if (notif.type === "commentaire_service" && notif.postId)  return () => navigate(`/services/${notif.postId}`);
-    if ((notif.type === "commentaire" || notif.type === "forum" || notif.type === "like") && notif.postId)
-      return () => navigate("/forum");
-    if (notif.type === "message") return () => { setChatOpen(true); setNotifOpen(false); };
-    return () => navigate("/");
+ const getNotificationAction = (notif) => {
+  if (notif.type === "commentaire_annonce" && notif.postId) {
+    return () => { 
+      setNotifOpen(false); // Fermer le panneau mobile
+      setMobileMenuOpen(false); // Fermer aussi le menu mobile si ouvert
+      navigate(`/annonces/${notif.postId}`); 
+    };
+  }
+  if (notif.type === "commentaire_service" && notif.postId) {
+    return () => { 
+      setNotifOpen(false);
+      setMobileMenuOpen(false);
+      navigate(`/services/${notif.postId}`); 
+    };
+  }
+  if ((notif.type === "commentaire" || notif.type === "forum" || notif.type === "like") && notif.postId) {
+    return () => { 
+      setNotifOpen(false);
+      setMobileMenuOpen(false);
+      navigate("/forum"); 
+    };
+  }
+  if (notif.type === "message") { 
+    return () => { 
+      setNotifOpen(false);
+      setMobileMenuOpen(false);
+      setChatOpen(true); 
+    };
+  }
+  return () => { 
+    setNotifOpen(false);
+    setMobileMenuOpen(false);
+    navigate("/"); 
   };
+};
 
   const isAdmin = !!(user?.isAdmin || localStorage.getItem("adminToken"));
 
@@ -734,54 +793,127 @@ useEffect(() => {
         </>
       )}
 
-      {/* NOTIFS MOBILE */}
-      {notifOpen && (
-        <div className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm md:hidden" onClick={() => setNotifOpen(false)}>
-          <div className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-[#0A031E] shadow-2xl overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-[#0A031E] border-b border-white/10 p-4 flex justify-between items-center">
-              <span className="text-sm font-bold text-white">🔔 Notifications</span>
-              <button onClick={() => setNotifOpen(false)} className="text-white/50 text-xl">✕</button>
-            </div>
-            <div className="p-2">
-              {notifLoading ? (
-                <div className="flex justify-center py-8"><div className="w-5 h-5 border-2 border-white/20 border-t-[#8B5CF6] rounded-full animate-spin" /></div>
-              ) : notifications.length === 0 ? (
-                <div className="text-center py-10">
-                  <div className="text-3xl mb-2 opacity-30">🔔</div>
-                  <p className="text-white/30 text-sm">Aucune notification</p>
-                </div>
-              ) : (
-                <>
-                  {notifUnread > 0 && (
-                    <div className="px-4 py-2 text-right">
-                      <button onClick={markAllRead} className="text-xs text-[#8B5CF6]">Tout marquer comme lu</button>
-                    </div>
-                  )}
-                  {notifications.map(notif => {
-                    const meta = getNotificationMeta(notif.type);
-                    return (
-                    <div key={notif._id}
-                      onClick={() => { markNotificationAsRead(notif._id); getNotificationAction(notif)(); setNotifOpen(false); }}
-                      className={`flex gap-3 px-3 py-3 cursor-pointer transition-all border-b border-white/[0.04] hover:bg-white/[0.04] relative ${!notif.lu ? "bg-[#C4B5FD]/[0.03]" : ""}`}
-                    >
-                      {!notif.lu && <div className="absolute left-0 top-3 bottom-3 w-0.5 bg-[#8B5CF6]/60 rounded-full" />}
-                      <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${meta.gradient} flex items-center justify-center text-white flex-shrink-0 ${meta.glow}`}>
-                        {meta.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm ${!notif.lu ? "text-white" : "text-white/60"}`}>{notif.message}</p>
-                        <p className="text-[10px] text-white/25 mt-1">{formatNotifTime(notif.createdAt)}</p>
-                      </div>
-                      {!notif.lu && <div className="w-2 h-2 rounded-full bg-[#8B5CF6] flex-shrink-0 mt-1.5" />}
-                    </div>
-                  );
-                  })}
-                </>
-              )}
-            </div>
+   
+{/* NOTIFS MOBILE */}
+{notifOpen && (
+  <div 
+    className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm md:hidden" 
+    onClick={(e) => {
+      if (e.target === e.currentTarget) {
+        setNotifOpen(false);
+      }
+    }}
+  >
+    <div 
+      className="mobile-notif-panel absolute right-0 top-0 bottom-0 w-full max-w-sm bg-[#0A031E] shadow-2xl overflow-y-auto" 
+      onClick={e => e.stopPropagation()}
+    >
+      <div className="sticky top-0 bg-[#0A031E] border-b border-white/10 p-4 flex justify-between items-center">
+        <span className="text-sm font-bold text-white">🔔 Notifications</span>
+        <button 
+          onClick={() => setNotifOpen(false)} 
+          className="text-white/50 text-xl hover:text-white transition-colors"
+        >
+          ✕
+        </button>
+      </div>
+      <div className="p-2">
+        {notifLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="w-5 h-5 border-2 border-white/20 border-t-[#8B5CF6] rounded-full animate-spin" />
           </div>
-        </div>
-      )}
+        ) : notifications.length === 0 ? (
+          <div className="text-center py-10">
+            <div className="text-3xl mb-2 opacity-30">🔔</div>
+            <p className="text-white/30 text-sm">Aucune notification</p>
+          </div>
+        ) : (
+          <>
+            {notifUnread > 0 && (
+              <div className="px-4 py-2 text-right">
+                <button 
+                  data-mark-all="true"  
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    markAllRead();
+                  }} 
+                  className="text-xs text-[#8B5CF6] hover:text-[#C4B5FD] transition-colors"
+                >
+                  Tout marquer comme lu
+                </button>
+              </div>
+            )}
+            {notifications.map(notif => {
+              const meta = getNotificationMeta(notif.type);
+              
+              return (
+                <div 
+                  key={notif._id}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Marquer comme lu sans attendre (fire and forget)
+                    if (!notif.lu) {
+                      fetch(`/api/notifications/${notif._id}/lu`, { 
+                        method: "PATCH", 
+                        headers: authHeaders() 
+                      }).catch(err => console.error(err));
+                      // Mettre à jour le compteur localement
+                      setNotifUnread(prev => Math.max(0, prev - 1));
+                    }
+                    
+                    // Fermer le panneau
+                    setNotifOpen(false);
+                    setMobileMenuOpen(false);
+                    
+                    // Navigation immédiate
+                    if (notif.type === "commentaire_annonce" && notif.postId) {
+                      navigate(`/annonces/${notif.postId}`);
+                    } else if (notif.type === "commentaire_service" && notif.postId) {
+                      navigate(`/services/${notif.postId}`);
+                    } else if ((notif.type === "commentaire" || notif.type === "forum" || notif.type === "like") && notif.postId) {
+                      navigate("/forum");
+                    } else if (notif.type === "message") {
+                      // Pour les messages, naviguer vers la page des messages sur mobile
+                      navigate("/messages");
+                    } else {
+                      navigate("/");
+                    }
+                  }}
+                  className={`flex gap-3 px-3 py-3 cursor-pointer transition-all border-b border-white/[0.04] hover:bg-white/[0.04] relative ${!notif.lu ? "bg-[#C4B5FD]/[0.03]" : ""}`}
+                >
+                  {/* Unread left accent */}
+                  {!notif.lu && (
+                    <div className="absolute left-0 top-3 bottom-3 w-0.5 bg-[#8B5CF6]/60 rounded-full" />
+                  )}
+
+                  {/* Icon */}
+                  <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${meta.gradient} flex items-center justify-center text-white flex-shrink-0 ${meta.glow}`}>
+                    {meta.icon}
+                  </div>
+
+                  <div className="flex-1 min-w-0 pr-1">
+                    <p className={`text-xs leading-relaxed ${!notif.lu ? "text-white font-medium" : "text-white/55"}`}>
+                      {notif.message}
+                    </p>
+                    <p className="text-[10px] text-white/25 mt-1">{formatNotifTime(notif.createdAt)}</p>
+                  </div>
+
+                  {/* Unread dot */}
+                  {!notif.lu && (
+                    <div className="w-2 h-2 rounded-full bg-[#8B5CF6] flex-shrink-0 mt-1.5" />
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+)}
 
       {/* MODAL RECHERCHE */}
       {searchOpen && (
