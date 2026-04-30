@@ -1,8 +1,11 @@
 import express from 'express'
+import multer from 'multer';
 import { Service, Notification, User } from '../models/Schemas.js'
 import { requireAuth } from '../middleware/auth.js';
 import { upload } from '../library/cloudinary.js';
-import { moderateImage, moderateImageWithSightEngine } from '../middleware/moderation.js';
+import { moderateImage, moderateImageBuffer } from '../middleware/moderation.js';
+
+const memUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 const router = express.Router()
 
@@ -17,11 +20,10 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/check-image", upload.single("image"), async (req, res) => {
+router.post("/check-image", memUpload.single("image"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ safe: false, message: "Aucune image" });
-    const imageUrl = req.file.secure_url || req.file.path;
-    const result = await moderateImageWithSightEngine(imageUrl);
+    const result = await moderateImageBuffer(req.file.buffer, req.file.mimetype);
     res.json(result);
   } catch (err) {
     console.error(err);

@@ -328,13 +328,13 @@ export default function Forum() {
       const result = await response.json();
       if (!result.safe && result.details) {
         const violations = [];
-        if (result.details.nudity)     violations.push("nudité explicite");
-        if (result.details.suggestive) violations.push("contenu suggestif");
-        if (result.details.weapon)     violations.push("arme à feu/couteau");
-        if (result.details.drugs)      violations.push("drogue/stupéfiants");
-        if (result.details.offensive)  violations.push("contenu offensant");
-        if (result.details.gore)       violations.push("violence/gore");
-        if (result.details.sexy)       violations.push("contenu sexy inapproprié");
+        if (result.details.nudity)         violations.push("nudité explicite");
+        if (result.details.partial_nudity)  violations.push("nudité partielle");
+        if (result.details.suggestive)     violations.push("contenu suggestif");
+        if (result.details.weapon)         violations.push("arme à feu/couteau");
+        if (result.details.drugs)          violations.push("drogue/stupéfiants");
+        if (result.details.offensive)      violations.push("contenu offensant");
+        if (result.details.gore)           violations.push("violence/gore");
         setModerationAlert(violations);
         setIsValidatingImage(false);
         return false;
