@@ -37,14 +37,25 @@ export default function ConfirmModal({
 
   if (!open) return null;
 
-  const handleConfirm = () => {
+  const handleConfirm = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (requirePassword && !password.trim()) return;
     onConfirm(requirePassword ? password : undefined);
   };
 
+  const handleCancel = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onCancel();
+  };
+
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) onCancel();
+  };
+
   const handleKey = (e) => {
-    if (e.key === "Enter") handleConfirm();
-    if (e.key === "Escape") onCancel();
+    if (e.key === "Escape") { e.stopPropagation(); onCancel(); }
   };
 
   return (
@@ -52,13 +63,14 @@ export default function ConfirmModal({
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)" }}
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+      onClick={handleBackdropClick}
       onKeyDown={handleKey}
       tabIndex={-1}
     >
       {/* Panel */}
       <div
         className="relative w-full max-w-md rounded-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
         style={{
           background: "rgba(13,3,30,0.92)",
           boxShadow:
@@ -134,6 +146,9 @@ export default function ConfirmModal({
                 onBlur={(e) =>
                   (e.target.style.borderColor = "rgba(196,181,253,0.2)")
                 }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleConfirm(e);
+                }}
               />
             </div>
           )}
@@ -141,7 +156,8 @@ export default function ConfirmModal({
           {/* Buttons */}
           <div className="flex gap-3 justify-end">
             <button
-              onClick={onCancel}
+              type="button"
+              onClick={handleCancel}
               className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
               style={{
                 background: "rgba(196,181,253,0.06)",
@@ -161,6 +177,7 @@ export default function ConfirmModal({
             </button>
 
             <button
+              type="button"
               onClick={handleConfirm}
               disabled={requirePassword && !password.trim()}
               className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
@@ -176,7 +193,7 @@ export default function ConfirmModal({
                 e.currentTarget.style.background = danger
                   ? "rgba(239,68,68,0.32)"
                   : "rgba(139,92,246,0.4)";
-                e.currentTarget.style.color = danger ? "#fff" : "#fff";
+                e.currentTarget.style.color = "#fff";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = danger

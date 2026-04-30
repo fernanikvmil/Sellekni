@@ -20,7 +20,8 @@ export default function Messages() {
   const [pendingFiles, setPendingFiles] = useState([]);   // photo confirmation
   const [sending, setSending] = useState(false);
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // { messageIndex, isMainMessage }
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const deleteTargetRef = useRef(null); // snapshot { convId, messageIndex, isMainMessage }
   const selected = conversations.find(c => c._id === selectedId);
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -84,15 +85,22 @@ export default function Messages() {
 
   // ---------------- DELETE MESSAGE ----------------
   const deleteMessage = (messageIndex, isMainMessage = false) => {
-    setDeleteConfirm({ messageIndex, isMainMessage });
+    // Snapshot tout de suite pour éviter les closures stales
+    deleteTargetRef.current = {
+      convId: selected?._id,
+      messageIndex,
+      isMainMessage,
+    };
+    setDeleteConfirm(true);
   };
 
   const confirmDeleteMessage = async () => {
-    const { messageIndex, isMainMessage } = deleteConfirm;
-    setDeleteConfirm(null);
+    setDeleteConfirm(false);
+    const { convId, messageIndex, isMainMessage } = deleteTargetRef.current || {};
+    if (!convId) return;
     try {
       const indexToDelete = isMainMessage ? "main" : messageIndex;
-      const res = await fetch(`/api/messages/${selected._id}/message/${indexToDelete}`, {
+      const res = await fetch(`/api/messages/${convId}/message/${indexToDelete}`, {
         method: "DELETE",
         headers: authHeaders()
       });
@@ -249,13 +257,13 @@ export default function Messages() {
       <Navbar />
 
       <ConfirmModal
-        open={!!deleteConfirm}
+        open={deleteConfirm}
         title="Supprimer ce message ?"
         message="Ce message sera supprimé définitivement pour les deux parties."
         confirmLabel="Supprimer"
         danger={true}
         onConfirm={confirmDeleteMessage}
-        onCancel={() => setDeleteConfirm(null)}
+        onCancel={() => setDeleteConfirm(false)}
       />
 
       {/* Media confirmation modal */}

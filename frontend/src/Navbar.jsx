@@ -58,7 +58,8 @@ export default function Navbar() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [zoomedImage, setZoomedImage] = useState(null);
   const [clearHistoryConfirm, setClearHistoryConfirm] = useState(false);
-  const [deleteMessageConfirm, setDeleteMessageConfirm] = useState(null); // { replyIndex, isMain }
+  const [deleteMessageConfirm, setDeleteMessageConfirm] = useState(false);
+  const deleteNavTargetRef = useRef(null); // snapshot { convId, replyIndex, isMain }
 
   const WILAYAS = [
     "Adrar","Chlef","Laghouat","Oum El Bouaghi","Batna","Béjaïa","Biskra",
@@ -395,15 +396,17 @@ useEffect(() => {
   // Supprimer un message
   const deleteMessage = (replyIndex, isMain = false) => {
     if (!selectedConv) return;
-    setDeleteMessageConfirm({ replyIndex, isMain });
+    deleteNavTargetRef.current = { convId: selectedConv._id, replyIndex, isMain };
+    setDeleteMessageConfirm(true);
   };
 
   const confirmDeleteMessage = async () => {
-    const { replyIndex, isMain } = deleteMessageConfirm;
-    setDeleteMessageConfirm(null);
+    setDeleteMessageConfirm(false);
+    const { convId, replyIndex, isMain } = deleteNavTargetRef.current || {};
+    if (!convId) return;
     try {
       const idx = isMain ? "main" : replyIndex;
-      const res = await fetch(`/api/messages/${selectedConv._id}/message/${idx}`, {
+      const res = await fetch(`/api/messages/${convId}/message/${idx}`, {
         method: "DELETE",
         headers: authHeaders(),
       });
@@ -412,7 +415,7 @@ useEffect(() => {
         const r = await fetch(`/api/messages/${user.username}`, { headers: authHeaders() });
         const arr = await r.json();
         setConversations(Array.isArray(arr) ? arr : []);
-        const updated = arr.find(c => c._id === selectedConv._id);
+        const updated = arr.find(c => c._id === convId);
         if (updated) setSelectedConv(updated);
       } else {
         alert(data.message || "Erreur lors de la suppression");
@@ -658,13 +661,13 @@ useEffect(() => {
         onCancel={() => setClearHistoryConfirm(false)}
       />
       <ConfirmModal
-        open={!!deleteMessageConfirm}
+        open={deleteMessageConfirm}
         title="Supprimer ce message ?"
         message="Ce message sera supprimé définitivement pour les deux parties."
         confirmLabel="Supprimer"
         danger={true}
         onConfirm={confirmDeleteMessage}
-        onCancel={() => setDeleteMessageConfirm(null)}
+        onCancel={() => setDeleteMessageConfirm(false)}
       />
 
       {/* NAVBAR */}
