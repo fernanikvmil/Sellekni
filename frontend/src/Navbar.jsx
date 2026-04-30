@@ -750,7 +750,7 @@ useEffect(() => {
                     : user.username?.slice(0, 1).toUpperCase()
                   }
                   {notifUnread > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center px-1 md:hidden">
+                    <span className="absolute -top-0 -right-0 min-w-[18px] h-[18px] bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center px-1 md:hidden">
                       {notifUnread > 9 ? "9+" : notifUnread}
                     </span>
                   )}
