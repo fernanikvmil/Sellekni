@@ -130,7 +130,7 @@ router.post("/resend-code", async (req, res) => {
     console.log("=========================================");
 
     try {
-      await sendVerificationCode(email, newCode, user.username);
+      await sendVerificationCodeEmail(email, newCode, user.username);
       console.log("✅ Email renvoyé");
     } catch (emailError) {
       console.log("⚠️ Email non envoyé");
