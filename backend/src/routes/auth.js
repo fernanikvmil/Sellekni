@@ -11,6 +11,16 @@ function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// ─── TEST EMAIL ───────────────────────────────────────────────────────────────
+router.get("/test-email", async (req, res) => {
+  try {
+    await sendVerificationCodeEmail(req.query.to || "kamilfernani9@gmail.com", "123456", "TestUser");
+    res.json({ success: true, message: "Email envoyé avec succès !" });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ─── SIGNUP ────────────────────────────────────────────────────────────────────
 router.post("/signup", async (req, res) => {
   try {
