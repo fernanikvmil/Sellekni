@@ -660,8 +660,7 @@ export default function Forum() {
             <div className={`rounded-2xl border border-[rgba(196,181,253,0.18)] bg-[#0A031E] p-5 text-center mb-5 ${mounted ? "fade-up" : "opacity-0"}`}>
               <div className="text-3xl mb-2 opacity-30">💬</div>
               <p className="text-white/40 text-sm mb-3">Connectez-vous pour publier dans le forum</p>
-              <button type="button" onClick={() => navigate("/login")}
-                className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-600 transition-colors text-sm font-medium">
+              <button type="button" onClick={() => navigate("/login")} className="auth-btn">
                 Se connecter
               </button>
             </div>

@@ -40,26 +40,39 @@ html, body {
 }
 .bell-ring:hover .bell-icon { animation: bellRing 0.9s both; }
 
-@keyframes authGradient {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
 .auth-btn {
-  background: linear-gradient(-45deg, #13002E, #2D1069, #C4B5FD, #13002E);
-  background-size: 800% 400%;
-  padding: 0.55em 1.8em;
-  display: inline-block;
-  text-align: center;
-  border: none;
-  border-radius: 10px;
+  padding: 0 1.6em;
+  height: 2.8em;
+  border-radius: 30em;
   font-size: 14px;
+  font-family: inherit;
   font-weight: 700;
-  color: #13002E;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
   cursor: pointer;
   white-space: nowrap;
-  transition: all .5s ease-in-out;
-  animation: authGradient 10s infinite cubic-bezier(.62, .28, .23, .99) both;
+  color: #e8d5ff;
+  background: #1a0535;
+  box-shadow: 4px 4px 12px rgba(0,0,0,0.5), -2px -2px 8px rgba(196,181,253,0.08);
+  transition: color 0.3s ease, transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.auth-btn:hover  { animation: authGradient 3s infinite; transform: scale(1.05); }
-.auth-btn:active { animation: authGradient 3s infinite; transform: scale(0.8); }
+.auth-btn::before {
+  content: '';
+  width: 0;
+  height: 100%;
+  border-radius: 30em;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-image: linear-gradient(to right, #0fd850 0%, #f9f047 100%);
+  transition: width 0.45s ease;
+  z-index: -1;
+}
+.auth-btn:hover::before { width: 100%; }
+.auth-btn:hover { color: #0a1a08; }
+.auth-btn:active { transform: scale(0.95); }
