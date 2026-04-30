@@ -155,8 +155,7 @@ export default function AnnonceDetail() {
   const istech = annonce.role === "technicien";
 
   return (
-    <div className="min-h-screen bg-transparent text-white">
-
+<div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center overflow-hidden relative">
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
         @keyframes spin { to { transform:rotate(360deg); } }
@@ -235,7 +234,7 @@ export default function AnnonceDetail() {
                 {[
                   { icon: "📦", label: "Catégorie", value: annonce.categorie },
                   { icon: "💰", label: "Prix",      value: `${Number(annonce.prix).toLocaleString()} DZD` },
-                  { icon: "👤", label: "Vendeur",   value: annonce.auteur },
+                  { icon: "👤", label: "annonceur",   value: annonce.auteur },
                   { icon: "🏷️", label: "Type",     value: isService ? "Service" : annonce.role },
                   { icon: "📅", label: "Publié le", value: new Date(annonce.createdAt).toLocaleDateString("fr-FR") },
                   ...(annonce.wilaya ? [{ icon: "📍", label: "Wilaya", value: annonce.wilaya }] : []),

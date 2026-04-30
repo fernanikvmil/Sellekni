@@ -76,28 +76,36 @@ export default function AIChat() {
 
   return (
     <>
+      {/* ── Styles pour le positionnement responsive du bouton ── */}
+      <style>{`
+        .ai-float-btn {
+          position: fixed;
+          bottom: 80px;
+          right: 20px;
+          width: 52px;
+          height: 52px;
+          border-radius: 50%;
+          border: none;
+          padding: 0;
+          cursor: pointer;
+          z-index: 50;
+          background: transparent;
+          outline: none;
+        }
+        @media (max-width: 640px) {
+          .ai-float-btn {
+            bottom: 140px;
+          }
+        }
+      `}</style>
+
       {/* ── Floating button ── */}
       <button
         onClick={() => setIsOpen(v => !v)}
         title="Assistant IA"
-        style={{
-          position: "fixed",
-          bottom: "80px",
-          right: "20px",
-          width: 52,
-          height: 52,
-          borderRadius: "50%",
-          border: "none",
-          padding: 0,
-          cursor: "pointer",
-          zIndex: 50,
-          background: "transparent",
-          outline: "none",
-        }}
-        className="hover:scale-110 active:scale-95 transition-transform duration-200"
+        className="ai-float-btn hover:scale-110 active:scale-95 transition-transform duration-200"
       >
         {isOpen ? (
-          /* Close state */
           <div style={{
             width: 56, height: 56, borderRadius: "50%",
             background: "linear-gradient(135deg,#8B5CF6,#C4B5FD)",
@@ -109,9 +117,7 @@ export default function AIChat() {
             </svg>
           </div>
         ) : (
-          /* Static orb — warm beige glow */
           <div style={{ position: "relative", width: 52, height: 52 }}>
-            {/* Outer glow rings */}
             <div style={{
               position: "absolute", inset: -8, borderRadius: "50%",
               background: "radial-gradient(circle, rgba(196,181,253,0.18) 0%, transparent 70%)",
@@ -122,14 +128,12 @@ export default function AIChat() {
               background: "radial-gradient(circle, rgba(212,168,124,0.15) 0%, transparent 70%)",
               pointerEvents: "none",
             }} />
-            {/* Main circle */}
             <div style={{
               width: 52, height: 52, borderRadius: "50%",
               background: "linear-gradient(135deg, #8B5CF6 0%, #C4B5FD 50%, #A78BFA 100%)",
               boxShadow: "0 0 0 1px rgba(196,181,253,0.35), 0 8px 28px rgba(212,168,124,0.45), 0 0 40px rgba(196,181,253,0.12)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              {/* Inner dark circle */}
               <div style={{
                 position: "absolute", inset: 5, borderRadius: "50%",
                 background: "#0E0520",
