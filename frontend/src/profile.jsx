@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { authHeaders, authFormHeaders } from "./api";
 import Navbar from "./Navbar";
+import ConfirmModal from "./ConfirmModal";
 
 const GOOGLE_MAPS_KEY = "AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8";
 
@@ -52,6 +53,9 @@ export default function Profile() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [saved, setSaved]             = useState(false);
   const [form, setForm]               = useState({ username: "", Firstname: "", Lastname: "", bio: "", telephone: "", wilaya: "", specialite: "", dateNaissance: "" });
+
+  // Delete account modal
+  const [deleteAccountConfirm, setDeleteAccountConfirm] = useState(false);
 
   // Password change
   const [pwdStep, setPwdStep]         = useState("idle"); // idle | sending | code | done
@@ -244,6 +248,33 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
+      <ConfirmModal
+        open={deleteAccountConfirm}
+        title="Supprimer mon compte ?"
+        message="Cette action est définitive et irréversible. Toutes vos données, annonces et publications seront effacées."
+        confirmLabel="Supprimer mon compte"
+        danger={true}
+        requirePassword={true}
+        onConfirm={async (password) => {
+          setDeleteAccountConfirm(false);
+          try {
+            const res = await fetch(`/api/users/${user.username}/delete-account`, {
+              method: "DELETE",
+              headers: { ...authHeaders(), "Content-Type": "application/json" },
+              body: JSON.stringify({ password }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+              localStorage.clear();
+              window.location.href = "/";
+            } else {
+              alert(data.message || "Erreur lors de la suppression.");
+            }
+          } catch { alert("Erreur de connexion."); }
+        }}
+        onCancel={() => setDeleteAccountConfirm(false)}
+      />
+
       <style>{`
         @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
         @keyframes spin { to { transform:rotate(360deg); } }
@@ -640,26 +671,7 @@ export default function Profile() {
                         </p>
                       </div>
                       <button
-                        onClick={async () => {
-                          if (!window.confirm("Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible.")) return;
-                          const confirmPassword = window.prompt("Entrez votre mot de passe pour confirmer :");
-                          if (!confirmPassword) { alert("Suppression annulée."); return; }
-                          try {
-                            const res = await fetch(`/api/users/${user.username}/delete-account`, {
-                              method: "DELETE",
-                              headers: { ...authHeaders(), "Content-Type": "application/json" },
-                              body: JSON.stringify({ password: confirmPassword }),
-                            });
-                            const data = await res.json();
-                            if (res.ok) {
-                              alert("Votre compte a été supprimé.");
-                              localStorage.clear();
-                              window.location.href = "/";
-                            } else {
-                              alert(data.message || "Erreur lors de la suppression.");
-                            }
-                          } catch { alert("Erreur de connexion."); }
-                        }}
+                        onClick={() => setDeleteAccountConfirm(true)}
                         className="flex-shrink-0 px-5 py-2.5 rounded-xl text-sm font-semibold text-red-300 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 hover:text-red-200 transition-all whitespace-nowrap">
                         🗑️ Supprimer mon compte
                       </button>

@@ -10,6 +10,7 @@ import AudioPlayer from "./AudioPlayer";
 import AIChat from "./AIChat";
 import MessageTextInput from "./MessageTextInput";
 import MediaUploadButton from "./MediaUploadButton";
+import ConfirmModal from "./ConfirmModal";
 
 const NAV_ITEMS = [
   { label: "Accueil", path: "/" },
@@ -56,6 +57,8 @@ export default function Navbar() {
   const [searchHistory, setSearchHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [zoomedImage, setZoomedImage] = useState(null);
+  const [clearHistoryConfirm, setClearHistoryConfirm] = useState(false);
+  const [deleteMessageConfirm, setDeleteMessageConfirm] = useState(null); // { replyIndex, isMain }
 
   const WILAYAS = [
     "Adrar","Chlef","Laghouat","Oum El Bouaghi","Batna","Béjaïa","Biskra",
@@ -127,8 +130,13 @@ const modalRef = useRef(null);
     } catch (err) {}
   };
 
-  const clearAllHistory = async () => {
-    if (!user || !window.confirm("Effacer tout l'historique de recherche ?")) return;
+  const clearAllHistory = () => {
+    if (!user) return;
+    setClearHistoryConfirm(true);
+  };
+
+  const confirmClearHistory = async () => {
+    setClearHistoryConfirm(false);
     try {
       await fetch("/api/search-history", {
         method: "DELETE",
@@ -385,8 +393,14 @@ useEffect(() => {
   };
 
   // Supprimer un message
-  const deleteMessage = async (replyIndex, isMain = false) => {
-    if (!selectedConv || !window.confirm("Supprimer ce message ?")) return;
+  const deleteMessage = (replyIndex, isMain = false) => {
+    if (!selectedConv) return;
+    setDeleteMessageConfirm({ replyIndex, isMain });
+  };
+
+  const confirmDeleteMessage = async () => {
+    const { replyIndex, isMain } = deleteMessageConfirm;
+    setDeleteMessageConfirm(null);
     try {
       const idx = isMain ? "main" : replyIndex;
       const res = await fetch(`/api/messages/${selectedConv._id}/message/${idx}`, {
@@ -634,6 +648,25 @@ useEffect(() => {
 
   return (
     <>
+      <ConfirmModal
+        open={clearHistoryConfirm}
+        title="Effacer l'historique ?"
+        message="Tout l'historique de recherche sera supprimé définitivement."
+        confirmLabel="Effacer"
+        danger={true}
+        onConfirm={confirmClearHistory}
+        onCancel={() => setClearHistoryConfirm(false)}
+      />
+      <ConfirmModal
+        open={!!deleteMessageConfirm}
+        title="Supprimer ce message ?"
+        message="Ce message sera supprimé définitivement pour les deux parties."
+        confirmLabel="Supprimer"
+        danger={true}
+        onConfirm={confirmDeleteMessage}
+        onCancel={() => setDeleteMessageConfirm(null)}
+      />
+
       {/* NAVBAR */}
       <nav className="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-8 py-4 backdrop-blur-xl" style={{ background: "rgba(14,5,32,0.92)", borderBottom: "1px solid rgba(196,181,253,0.12)" }}>
 

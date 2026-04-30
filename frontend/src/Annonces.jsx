@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { authHeaders, authFormHeaders } from "./api";
 import Navbar from "./Navbar";
 import { AuthBtn, AlerteModeration } from "./Components";
+import ConfirmModal from "./ConfirmModal";
 
 function CustomSelect({ value, onChange, options, placeholder = "Sélectionner..." }) {
   const [open, setOpen] = useState(false);
@@ -115,6 +116,7 @@ export default function Annonces() {
   const [signalReason, setSignalReason] = useState("");
   const [signaledIds, setSignaledIds] = useState(new Set());
   const [signalSuccess, setSignalSuccess] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // { id }
 
   const [filters, setFilters] = useState({
     prixMin: "", prixMax: "", wilaya: "", date: "", tri: "recent", categorie: ""
@@ -315,7 +317,12 @@ export default function Annonces() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Supprimer définitivement ?")) return;
+    setDeleteConfirm({ id });
+  };
+
+  const confirmDelete = async () => {
+    const { id } = deleteConfirm;
+    setDeleteConfirm(null);
     const endpoint = activeTab === "annonces" ? `/api/annonces/${id}` : `/api/services/${id}`;
     await fetch(endpoint, { method: "DELETE", headers: authHeaders() });
     fetchItems();
@@ -352,6 +359,17 @@ export default function Annonces() {
           onClose={() => setModerationAlert(null)}
         />
       )}
+
+      <ConfirmModal
+        open={!!deleteConfirm}
+        title="Supprimer définitivement ?"
+        message={`Cette ${activeTab === "annonces" ? "annonce" : "offre de service"} sera supprimée de façon permanente. Cette action est irréversible.`}
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        danger={true}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
+      />
 
       {/* ── Modal Signalement ── */}
       {signalModal && (

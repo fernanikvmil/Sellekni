@@ -6,6 +6,7 @@ import VoiceRecorder from "./VoiceRecorder";
 import AudioPlayer from "./AudioPlayer";
 import MessageTextInput from "./MessageTextInput";
 import MediaUploadButton from "./MediaUploadButton";
+import ConfirmModal from "./ConfirmModal";
 
 export default function Messages() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function Messages() {
   const [pendingFiles, setPendingFiles] = useState([]);   // photo confirmation
   const [sending, setSending] = useState(false);
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // { messageIndex, isMainMessage }
   const selected = conversations.find(c => c._id === selectedId);
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -81,8 +83,13 @@ export default function Messages() {
   };
 
   // ---------------- DELETE MESSAGE ----------------
-  const deleteMessage = async (messageIndex, isMainMessage = false) => {
-    if (!window.confirm("Supprimer ce message ?")) return;
+  const deleteMessage = (messageIndex, isMainMessage = false) => {
+    setDeleteConfirm({ messageIndex, isMainMessage });
+  };
+
+  const confirmDeleteMessage = async () => {
+    const { messageIndex, isMainMessage } = deleteConfirm;
+    setDeleteConfirm(null);
     try {
       const indexToDelete = isMainMessage ? "main" : messageIndex;
       const res = await fetch(`/api/messages/${selected._id}/message/${indexToDelete}`, {
@@ -240,6 +247,16 @@ export default function Messages() {
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-[#07021A] via-[#08031D] to-[#07021A] text-white">
       <Navbar />
+
+      <ConfirmModal
+        open={!!deleteConfirm}
+        title="Supprimer ce message ?"
+        message="Ce message sera supprimé définitivement pour les deux parties."
+        confirmLabel="Supprimer"
+        danger={true}
+        onConfirm={confirmDeleteMessage}
+        onCancel={() => setDeleteConfirm(null)}
+      />
 
       {/* Media confirmation modal */}
       {pendingFiles.length > 0 && (

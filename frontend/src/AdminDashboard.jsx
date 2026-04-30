@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import ConfirmModal from "./ConfirmModal";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "";
 
@@ -750,6 +751,7 @@ function ModerationPanel({ onToast }) {
   const [loading, setLoading] = useState(true);
   const [confirmModal, setConfirmModal] = useState({ open: false, item: null });
   const [viewModal, setViewModal] = useState({ open: false, item: null });
+  const [clearAllConfirm, setClearAllConfirm] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -794,8 +796,10 @@ function ModerationPanel({ onToast }) {
     }
   };
 
-  const handleClearAll = async () => {
-    if (!window.confirm("Effacer tout l'historique des signalements ? Cette action est irréversible.")) return;
+  const handleClearAll = () => setClearAllConfirm(true);
+
+  const confirmClearAll = async () => {
+    setClearAllConfirm(false);
     try {
       await fetch(`${BACKEND}/api/admin/moderation/all`, { method: "DELETE", headers: authHeaders() });
       setItems([]);
@@ -807,6 +811,15 @@ function ModerationPanel({ onToast }) {
 
   return (
     <>
+      <ConfirmModal
+        open={clearAllConfirm}
+        title="Effacer tout l'historique ?"
+        message="Tous les signalements seront supprimés de façon permanente. Cette action est irréversible."
+        confirmLabel="Tout effacer"
+        danger={true}
+        onConfirm={confirmClearAll}
+        onCancel={() => setClearAllConfirm(false)}
+      />
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 text-amber-300 text-sm flex-1">

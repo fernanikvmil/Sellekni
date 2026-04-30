@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import ConfirmModal from "./ConfirmModal";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -84,8 +85,15 @@ export default function Admin() {
     }
   };
 
-  const handleDelete = async (type, id) => {
-    if (!confirm("Supprimer définitivement ?")) return;
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // { type, id }
+
+  const handleDelete = (type, id) => {
+    setDeleteConfirm({ type, id });
+  };
+
+  const confirmDelete = async () => {
+    const { type, id } = deleteConfirm;
+    setDeleteConfirm(null);
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`/api/admin/${type}/${id}`, {
@@ -117,6 +125,17 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-transparent p-8">
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin .75s linear infinite}`}</style>
+
+      <ConfirmModal
+        open={!!deleteConfirm}
+        title="Supprimer définitivement ?"
+        message="Cet élément sera supprimé de façon permanente. Cette action est irréversible."
+        confirmLabel="Supprimer"
+        danger={true}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
+      />
+
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
