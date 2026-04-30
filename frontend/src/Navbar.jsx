@@ -823,7 +823,7 @@ useEffect(() => {
               ))}
             </div>
             <div className="p-4 border-t border-white/10">
-              <div className="text-xs text-white/30 text-center">sellekni © 2025</div>
+              <div className="text-xs text-white/30 text-center">sellekni © 2026</div>
             </div>
           </div>
         </>

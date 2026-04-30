@@ -106,7 +106,19 @@ export default function Messages() {
       });
       const data = await res.json();
       if (data.success) {
-        await fetchMessages();
+        // Mise à jour optimiste : on retire le message localement sans toucher selectedId
+        setConversations(prev => prev.map(c => {
+          if (c._id !== convId) return c;
+          if (isMainMessage) {
+            return { ...c, message: "", media: [] };
+          } else {
+            return { ...c, reponses: (c.reponses || []).filter((_, i) => i !== messageIndex) };
+          }
+        }));
+        // On reste sur la même conversation
+        setSelectedId(convId);
+        // Sync en arrière-plan
+        fetchMessages().then(() => setSelectedId(convId));
       } else {
         alert(data.message || "Erreur lors de la suppression");
       }
