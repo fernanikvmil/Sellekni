@@ -304,20 +304,41 @@ export default function Homepage() {
             {/* Grille de stats */}
             <div className="relative z-10 grid grid-cols-2 gap-3 md:gap-5 w-full max-w-sm md:max-w-md">
               {[
-                { icon: "👨‍🔧", label: "Techniciens", value: stats.techniciens !== null ? `${stats.techniciens}` : "…", color: "from-violet-600/25 to-violet-800/10", border: "border-violet-500/20", glow: "rgba(139,92,246,0.15)" },
-                { icon: "📋", label: "Annonces",     value: stats.annonces     !== null ? `${stats.annonces}`     : "…", color: "from-pink-600/25 to-pink-800/10",   border: "border-pink-500/20",   glow: "rgba(236,72,153,0.15)"  },
-                { icon: "🏙️", label: "Wilayas",      value: stats.wilayas      !== null ? `${stats.wilayas}`      : "…", color: "from-sky-600/25 to-sky-800/10",     border: "border-sky-500/20",    glow: "rgba(14,165,233,0.15)"  },
-                { icon: "⭐", label: "Satisfaction",  value: stats.satisfaction !== null ? `${stats.satisfaction}%`: "Nouveau", color: "from-amber-600/25 to-amber-800/10", border: "border-amber-500/20", glow: "rgba(245,158,11,0.15)" },
+                { icon: "👨‍🔧", label: "Techniciens", value: stats.techniciens !== null ? `${stats.techniciens}` : "…", accent: "rgba(139,92,246,0.35)" },
+                { icon: "📋",  label: "Annonces",     value: stats.annonces     !== null ? `${stats.annonces}`     : "…", accent: "rgba(196,181,253,0.25)" },
+                { icon: "🏙️", label: "Wilayas",       value: stats.wilayas      !== null ? `${stats.wilayas}`      : "…", accent: "rgba(99,102,241,0.3)"  },
+                { icon: "⭐",  label: "Satisfaction",  value: stats.satisfaction !== null ? `${stats.satisfaction}%`: "Nouveau", accent: "rgba(167,139,250,0.3)" },
               ].map((stat, i) => (
-                <div key={i}
-                  className={`bg-gradient-to-br ${stat.color} border ${stat.border} rounded-2xl md:rounded-3xl p-4 md:p-7 flex flex-col gap-2 md:gap-3 backdrop-blur-sm`}
-                  style={{
-                    animation: `fadeUp 0.6s cubic-bezier(.22,1,.36,1) ${0.2 + i * 0.1}s both`,
-                    boxShadow: `0 8px 32px ${stat.glow}, inset 0 1px 0 rgba(255,255,255,0.05)`,
-                  }}>
-                  <span className="text-2xl md:text-3xl">{stat.icon}</span>
-                  <p className="text-2xl md:text-4xl font-black text-white leading-none tracking-tight">{stat.value}</p>
-                  <p className="text-xs md:text-sm text-white/40 font-medium">{stat.label}</p>
+                <div key={i} style={{
+                  position: "relative",
+                  borderRadius: "20px",
+                  overflow: "hidden",
+                  background: "linear-gradient(145deg, #0f0628 0%, #0a031e 100%)",
+                  boxShadow: `0 20px 50px rgba(0,0,0,0.55), 0 0 0 1px rgba(196,181,253,0.07) inset, 0 8px 32px ${stat.accent}`,
+                  isolation: "isolate",
+                  animation: `fadeUp 0.6s cubic-bezier(.22,1,.36,1) ${0.2 + i * 0.1}s both`,
+                }}>
+                  {/* Shimmer diagonal */}
+                  <div style={{
+                    position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none",
+                    background: "linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 40%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.03) 60%, rgba(255,255,255,0.08) 100%)",
+                    mixBlendMode: "overlay",
+                  }} />
+                  {/* Bordure dégradée */}
+                  <div style={{
+                    position: "absolute", inset: 0, borderRadius: "20px", padding: "1px",
+                    background: "linear-gradient(135deg, rgba(196,181,253,0.55) 0%, rgba(196,181,253,0.08) 50%, rgba(139,92,246,0.4) 100%)",
+                    WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                    WebkitMaskComposite: "xor",
+                    maskComposite: "exclude",
+                    zIndex: 3, pointerEvents: "none",
+                  }} />
+                  {/* Contenu */}
+                  <div style={{ position: "relative", zIndex: 10, padding: "1.2rem 1.4rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                    <span style={{ fontSize: "clamp(1.6rem, 4vw, 2rem)" }}>{stat.icon}</span>
+                    <p style={{ fontSize: "clamp(1.8rem, 5vw, 2.6rem)", fontWeight: 900, color: "white", lineHeight: 1, margin: 0 }}>{stat.value}</p>
+                    <p style={{ fontSize: "clamp(0.7rem, 2vw, 0.85rem)", color: "rgba(196,181,253,0.55)", fontWeight: 500, margin: 0 }}>{stat.label}</p>
+                  </div>
                 </div>
               ))}
             </div>
