@@ -13,11 +13,21 @@ function generateVerificationCode() {
 
 // ─── TEST EMAIL ───────────────────────────────────────────────────────────────
 router.get("/test-email", async (req, res) => {
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+
+  if (!emailUser || !emailPass) {
+    return res.status(500).json({ success: false, error: `Variables manquantes: EMAIL_USER=${emailUser || "NON DÉFINI"}, EMAIL_PASS=${emailPass ? "OK" : "NON DÉFINI"}` });
+  }
+
   try {
-    await sendVerificationCodeEmail(req.query.to || "kamilfernani9@gmail.com", "123456", "TestUser");
-    res.json({ success: true, message: "Email envoyé avec succès !" });
+    await Promise.race([
+      sendVerificationCodeEmail(req.query.to || emailUser, "123456", "TestUser"),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout SMTP après 10s")), 10000))
+    ]);
+    res.json({ success: true, message: "Email envoyé !", from: emailUser });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message, from: emailUser });
   }
 });
 
