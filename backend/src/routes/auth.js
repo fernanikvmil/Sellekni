@@ -2,50 +2,13 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
 import { User } from "../models/Schemas.js";
+import { sendVerificationCodeEmail, sendPasswordResetEmail as mailjetResetEmail } from "../library/mailer.js";
 
 const router = express.Router();
 
 function generateVerificationCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: { rejectUnauthorized: false },
-});
-
-async function sendVerificationCode(email, code, username) {
-  await transporter.sendMail({
-    from: `"sellekni" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: "Code de vérification - sellekni",
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%); border-radius: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #a855f7; margin-bottom: 10px;">sellekni</h1>
-          <div style="width: 50px; height: 4px; background: linear-gradient(90deg, #a855f7, #06b6d4); margin: 0 auto; border-radius: 2px;"></div>
-        </div>
-        <div style="background: rgba(255,255,255,0.05); border-radius: 16px; padding: 30px;">
-          <h2 style="color: white; text-align: center;">Bonjour ${username} !</h2>
-          <p style="color: #cbd5e1; text-align: center;">Votre code de vérification :</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <div style="display: inline-block; background: #1e1e2e; padding: 15px 30px; border-radius: 12px; border: 2px solid #a855f7;">
-              <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #a855f7;">${code}</span>
-            </div>
-          </div>
-          <p style="color: #94a3b8; text-align: center;">Ce code expire dans <strong>10 minutes</strong>.</p>
-        </div>
-      </div>
-    `,
-  });
 }
 
 // ─── SIGNUP ────────────────────────────────────────────────────────────────────
@@ -95,7 +58,7 @@ router.post("/signup", async (req, res) => {
     console.log("=========================================");
 
     try {
-      await sendVerificationCode(email, verificationCode, username);
+      await sendVerificationCodeEmail(email, verificationCode, username);
       console.log("✅ Email envoyé avec succès");
     } catch (emailError) {
       console.log("⚠️ Email non envoyé:", emailError.message);
@@ -268,25 +231,8 @@ router.post("/forgot-password", async (req, res) => {
     user.resetPasswordExpires = new Date(Date.now() + 1000 * 60 * 30);
     await user.save();
 
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-
     try {
-      await transporter.sendMail({
-        from: `"sellekni" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: "Réinitialisation de votre mot de passe — Sellekni",
-        html: `
-          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#0a0a0f;color:#fff;border-radius:16px;">
-            <h1 style="color:#a855f7;">sellekni</h1>
-            <h2>Réinitialisation du mot de passe</h2>
-            <p>Cliquez sur le lien pour réinitialiser votre mot de passe :</p>
-            <a href="${resetLink}" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;text-decoration:none;border-radius:10px;font-weight:bold;">
-              Réinitialiser mon mot de passe
-            </a>
-            <p style="color:#555;margin-top:28px;font-size:12px;">Ce lien expire dans 30 minutes.</p>
-          </div>
-        `,
-      });
+      await mailjetResetEmail(email, resetToken);
     } catch (emailError) {
       console.log("⚠️ Email reset non envoyé:", emailError.message);
     }

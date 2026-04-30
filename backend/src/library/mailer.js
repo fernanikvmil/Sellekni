@@ -52,6 +52,31 @@ export const sendVerificationEmail = async (to, token) => {
   });
 };
 
+export const sendVerificationCodeEmail = async (to, code, username) => {
+  await sendEmail({
+    to,
+    subject: "Code de vérification — Sellekni",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:linear-gradient(135deg,#0a0a0f 0%,#1a1a2e 100%);border-radius:20px;">
+        <div style="text-align:center;margin-bottom:30px;">
+          <h1 style="color:#a855f7;margin-bottom:10px;">sellekni</h1>
+          <div style="width:50px;height:4px;background:linear-gradient(90deg,#a855f7,#06b6d4);margin:0 auto;border-radius:2px;"></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05);border-radius:16px;padding:30px;">
+          <h2 style="color:white;text-align:center;">Bonjour ${username} !</h2>
+          <p style="color:#cbd5e1;text-align:center;">Votre code de vérification :</p>
+          <div style="text-align:center;margin:30px 0;">
+            <div style="display:inline-block;background:#1e1e2e;padding:15px 30px;border-radius:12px;border:2px solid #a855f7;">
+              <span style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#a855f7;">${code}</span>
+            </div>
+          </div>
+          <p style="color:#94a3b8;text-align:center;">Ce code expire dans <strong>10 minutes</strong>.</p>
+        </div>
+      </div>
+    `,
+  });
+};
+
 export const sendPasswordResetEmail = async (to, token) => {
   const url = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
