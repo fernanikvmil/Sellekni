@@ -69,10 +69,10 @@ html, body {
   position: absolute;
   top: 0;
   left: 0;
-  background-image: linear-gradient(to right, #0fd850 0%, #f9f047 100%);
+  background-image: linear-gradient(to right, #6d28d9 0%, #C4B5FD 50%, #a78bfa 100%);
   transition: width 0.45s ease;
   z-index: -1;
 }
 .auth-btn:hover::before { width: 100%; }
-.auth-btn:hover { color: #0a1a08; }
+.auth-btn:hover { color: #13002E; }
 .auth-btn:active { transform: scale(0.95); }
