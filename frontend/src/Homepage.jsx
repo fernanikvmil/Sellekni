@@ -359,21 +359,21 @@ export default function Homepage() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {services.map((service) => (
-              <div
-                key={service.id}
-                className="service-card cursor-pointer transition-all duration-300 rounded-xl p-3"
-                style={{
-                  position: "relative", overflow: "hidden", isolation: "isolate",
-                  background: "rgba(196,181,253,0.04)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(196,181,253,0.06) inset",
-                  border: "1px solid transparent",
-                  backgroundClip: "padding-box",
-                }}>
-                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${service.color} flex items-center justify-center mb-2 text-xl mx-auto`}>
-                  {service.icon}
+              <div key={service.id} className="service-card cursor-pointer transition-all duration-300 rounded-xl" style={{
+                position: "relative", overflow: "hidden", isolation: "isolate",
+                background: "rgba(196,181,253,0.05)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.35), 0 20px 50px rgba(0,0,0,0.3)",
+              }}>
+                <div style={{ position:"absolute", inset:0, zIndex:2, pointerEvents:"none", mixBlendMode:"overlay",
+                  background:"linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 40%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.03) 60%, rgba(255,255,255,0.08) 100%)" }} />
+                <div style={{ position:"absolute", inset:0, borderRadius:"12px", padding:"1px", zIndex:3, pointerEvents:"none",
+                  background:"linear-gradient(135deg, rgba(196,181,253,0.55) 0%, rgba(196,181,253,0.08) 50%, rgba(139,92,246,0.4) 100%)",
+                  WebkitMask:"linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)", WebkitMaskComposite:"xor", maskComposite:"exclude" }} />
+                <div style={{ position:"relative", zIndex:10, padding:"0.75rem" }}>
+                  <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${service.color} flex items-center justify-center mb-2 text-xl mx-auto`}>{service.icon}</div>
+                  <h3 className="text-xs font-semibold text-white text-center mb-1">{service.name}</h3>
+                  <p className="text-white/40 text-[10px] text-center leading-tight">{service.description}</p>
                 </div>
-                <h3 className="text-xs font-semibold text-white text-center mb-1">{service.name}</h3>
-                <p className="text-white/40 text-[10px] text-center leading-tight">{service.description}</p>
               </div>
             ))}
           </div>
@@ -391,22 +391,24 @@ export default function Homepage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {steps.map((step) => (
-              <div key={step.number} className="step-card rounded-2xl p-6 text-center" style={{
-                position: "relative", overflow: "hidden", isolation: "isolate",
-                background: "rgba(196,181,253,0.04)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-                boxShadow: "0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(196,181,253,0.07) inset",
-                backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.01) 50%, rgba(255,255,255,0.05) 100%)",
+              <div key={step.number} className="step-card rounded-2xl" style={{
+                position:"relative", overflow:"hidden", isolation:"isolate",
+                background:"rgba(196,181,253,0.05)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
+                boxShadow:"0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08) inset",
               }}>
-                <div className="relative inline-block mb-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-pink-600 flex items-center justify-center text-2xl mx-auto">
-                    {step.icon}
+                <div style={{ position:"absolute", inset:0, zIndex:2, pointerEvents:"none", mixBlendMode:"overlay",
+                  background:"linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 40%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.03) 60%, rgba(255,255,255,0.08) 100%)" }} />
+                <div style={{ position:"absolute", inset:0, borderRadius:"16px", padding:"1px", zIndex:3, pointerEvents:"none",
+                  background:"linear-gradient(135deg, rgba(196,181,253,0.55) 0%, rgba(196,181,253,0.08) 50%, rgba(139,92,246,0.4) 100%)",
+                  WebkitMask:"linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)", WebkitMaskComposite:"xor", maskComposite:"exclude" }} />
+                <div style={{ position:"relative", zIndex:10, padding:"1.5rem", textAlign:"center" }}>
+                  <div className="relative inline-block mb-4">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-600 to-pink-600 flex items-center justify-center text-2xl mx-auto">{step.icon}</div>
+                    <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-violet-500 text-white text-xs font-bold flex items-center justify-center">{step.number}</div>
                   </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-violet-500 text-white text-xs font-bold flex items-center justify-center">
-                    {step.number}
-                  </div>
+                  <h3 className="text-base font-semibold text-white mb-2">{step.title}</h3>
+                  <p className="text-white/35 text-xs">{step.description}</p>
                 </div>
-                <h3 className="text-base font-semibold text-white mb-2">{step.title}</h3>
-                <p className="text-white/35 text-xs">{step.description}</p>
               </div>
             ))}
           </div>
@@ -418,15 +420,21 @@ export default function Homepage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map((feature, idx) => (
-              <div key={idx} className="rounded-xl p-5 text-center" style={{
-                position: "relative", overflow: "hidden", isolation: "isolate",
-                background: "rgba(196,181,253,0.04)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-                boxShadow: "0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(196,181,253,0.07) inset",
-                backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.01) 50%, rgba(255,255,255,0.05) 100%)",
+              <div key={idx} className="rounded-xl" style={{
+                position:"relative", overflow:"hidden", isolation:"isolate",
+                background:"rgba(196,181,253,0.05)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
+                boxShadow:"0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08) inset",
               }}>
-                <div className="text-2xl mb-3">{feature.icon}</div>
-                <h3 className="text-sm font-semibold text-white mb-1">{feature.title}</h3>
-                <p className="text-white/30 text-xs">{feature.description}</p>
+                <div style={{ position:"absolute", inset:0, zIndex:2, pointerEvents:"none", mixBlendMode:"overlay",
+                  background:"linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 40%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.03) 60%, rgba(255,255,255,0.08) 100%)" }} />
+                <div style={{ position:"absolute", inset:0, borderRadius:"12px", padding:"1px", zIndex:3, pointerEvents:"none",
+                  background:"linear-gradient(135deg, rgba(196,181,253,0.55) 0%, rgba(196,181,253,0.08) 50%, rgba(139,92,246,0.4) 100%)",
+                  WebkitMask:"linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)", WebkitMaskComposite:"xor", maskComposite:"exclude" }} />
+                <div style={{ position:"relative", zIndex:10, padding:"1.25rem", textAlign:"center" }}>
+                  <div className="text-2xl mb-3">{feature.icon}</div>
+                  <h3 className="text-sm font-semibold text-white mb-1">{feature.title}</h3>
+                  <p className="text-white/30 text-xs">{feature.description}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -436,12 +444,17 @@ export default function Homepage() {
       {/* ── CTA SECTION ── */}
       <section className="relative z-10 py-16 px-5 sm:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="rounded-3xl p-8" style={{
-            position: "relative", overflow: "hidden", isolation: "isolate",
-            background: "rgba(196,181,253,0.04)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(196,181,253,0.07) inset",
-            backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.01) 50%, rgba(255,255,255,0.06) 100%)",
+          <div className="rounded-3xl" style={{
+            position:"relative", overflow:"hidden", isolation:"isolate",
+            background:"rgba(196,181,253,0.05)", backdropFilter:"blur(12px)", WebkitBackdropFilter:"blur(12px)",
+            boxShadow:"0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08) inset",
           }}>
+            <div style={{ position:"absolute", inset:0, zIndex:2, pointerEvents:"none", mixBlendMode:"overlay",
+              background:"linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 40%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.03) 60%, rgba(255,255,255,0.08) 100%)" }} />
+            <div style={{ position:"absolute", inset:0, borderRadius:"24px", padding:"1px", zIndex:3, pointerEvents:"none",
+              background:"linear-gradient(135deg, rgba(196,181,253,0.55) 0%, rgba(196,181,253,0.08) 50%, rgba(139,92,246,0.4) 100%)",
+              WebkitMask:"linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)", WebkitMaskComposite:"xor", maskComposite:"exclude" }} />
+            <div style={{ position:"relative", zIndex:10, padding:"2rem" }}>
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
               Prêt à {user?.role === "technicien" ? "proposer vos services" : "trouver un professionnel"} ?
             </h2>
@@ -453,6 +466,7 @@ export default function Homepage() {
             <AuthBtn onClick={() => navigate("/annonces")} variant="violet">
               {user?.role === "technicien" ? "Commencer maintenant →" : "Trouver un professionnel →"}
             </AuthBtn>
+            </div>
           </div>
         </div>
       </section>
