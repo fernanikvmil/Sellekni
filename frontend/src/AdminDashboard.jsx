@@ -1125,8 +1125,8 @@ export default function AdminDashboard() {
   const tabTitle = ALL_TABS.find((t) => t.id === activeTab);
 
   return (
-    <div className="flex min-h-screen bg-transparent">
-      <Sidebar
+       <div className="flex min-h-screen bg-[#0a0a0f]">
+        <Sidebar
         active={activeTab}
         onChange={(tab) => { setActiveTab(tab); setMobileNavOpen(false); }}
         onLogout={handleLogout}

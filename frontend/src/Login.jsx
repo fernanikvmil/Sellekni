@@ -85,7 +85,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-transparent flex items-center justify-center overflow-hidden relative">
+    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center overflow-hidden relative">
 
       <div className="absolute -top-20 -left-20 w-100 h-100 rounded-full bg-violet-600/20 blur-[80px] animate-pulse" />
       <div className="absolute -bottom-15 -right-15 w-87.5 h-87.5 rounded-full bg-pink-500/15 blur-[80px] animate-pulse delay-1000" />

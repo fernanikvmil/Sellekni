@@ -663,11 +663,11 @@ export default function Messages() {
                               {msg.vu ? " ✓✓Vu" : "✓"}
                             </span>
                             <button
-                              type="button"
-                              onClick={() => deleteMessage(msg.replyIndex, msg.isMain === true)}
-                              className="text-[10px] text-red-400/50 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity"
+                            type="button"
+                            onClick={() => deleteMessage(msg.replyIndex, msg.isMain === true)}
+                           className="text-[11px] text-red-400/50 hover:text-red-300 transition-opacity md:opacity-0 md:group-hover:opacity-100 opacity-100"
                             >
-                              🗑️
+                            🗑
                             </button>
                           </>
                         )}

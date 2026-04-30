@@ -123,7 +123,7 @@ export default function Signin() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent flex items-center justify-center overflow-hidden relative py-10">
+    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center overflow-hidden relative py-10">
       <style>{`
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(28px); }
