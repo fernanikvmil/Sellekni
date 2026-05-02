@@ -546,10 +546,11 @@ export default function Messages() {
             </div>
           ) : (
             <>
-              {/* HEADER */}
-              <div className="px-3 sm:px-5 py-3.5 flex items-center gap-3 flex-shrink-0"
+              {/* HEADER sticky */}
+              <div className="px-3 sm:px-5 py-3.5 flex items-center gap-3 flex-shrink-0 sticky top-0 z-10"
                 style={{
-                  background: "linear-gradient(135deg,rgba(109,40,217,0.12) 0%,rgba(15,15,30,0) 100%)",
+                  background: "linear-gradient(135deg,rgba(9,3,29,0.97) 0%,rgba(15,5,40,0.97) 100%)",
+                  backdropFilter: "blur(16px)",
                   borderBottom: "1px solid rgba(255,255,255,0.06)"
                 }}>
                 {/* Back button (mobile only) */}
@@ -717,7 +718,7 @@ export default function Messages() {
 
               {/* INPUT */}
               <div className="px-3 py-3 flex-shrink-0"
-                style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(6,2,24,0.92)", backdropFilter: "blur(12px)", paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
+                style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(6,2,24,0.92)", backdropFilter: "blur(12px)", paddingBottom: "max(6px, env(safe-area-inset-bottom))" }}>
 
                 {/* Selected files preview */}
                 {selectedFiles.length > 0 && (
