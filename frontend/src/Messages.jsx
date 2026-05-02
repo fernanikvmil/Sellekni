@@ -594,7 +594,7 @@ export default function Messages() {
               </div>
 
               {/* MESSAGES */}
-              <div className="flex-1 overflow-y-auto px-2 py-2 space-y-3"
+              <div className="flex-1 overflow-y-auto px-2 py-1 space-y-2"
                 style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(196,181,253,0.15) transparent" }}>
                 {buildThread(selected).map((msg, i) => {
                   const isMe = msg.de === user.username;
