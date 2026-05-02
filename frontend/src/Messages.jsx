@@ -265,7 +265,7 @@ export default function Messages() {
 
   // ---------------- UI ----------------
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-[#07021A] via-[#08031D] to-[#07021A] text-white">
+    <div className="flex flex-col bg-gradient-to-br from-[#07021A] via-[#08031D] to-[#07021A] text-white" style={{ height: "100dvh" }}>
       <Navbar />
 
       <ConfirmModal
@@ -717,7 +717,7 @@ export default function Messages() {
 
               {/* INPUT */}
               <div className="px-3 py-3 flex-shrink-0"
-                style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(6,2,24,0.92)", backdropFilter: "blur(12px)" }}>
+                style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(6,2,24,0.92)", backdropFilter: "blur(12px)", paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
 
                 {/* Selected files preview */}
                 {selectedFiles.length > 0 && (
