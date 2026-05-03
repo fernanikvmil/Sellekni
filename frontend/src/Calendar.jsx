@@ -1,17 +1,110 @@
 import * as React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 
 function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function Calendar({
-  className,
-  classNames,
-  showOutsideDays = true,
-  ...props
-}) {
+function CustomDropdown({ value, onChange, children }) {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+
+  const options = React.Children.toArray(children).map((child) => ({
+    value: child.props.value,
+    label: child.props.children,
+  }));
+
+  const selected = options.find((o) => String(o.value) === String(value));
+
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selectedRef = React.useRef(null);
+
+  const handleOpen = () => {
+    setOpen((v) => !v);
+  };
+
+  React.useEffect(() => {
+    if (open && selectedRef.current) {
+      selectedRef.current.scrollIntoView({ block: "nearest" });
+    }
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={handleOpen}
+        className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium capitalize cursor-pointer transition-all duration-150"
+        style={{
+          background: "rgba(196,181,253,0.06)",
+          border: open ? "1px solid rgba(196,181,253,0.35)" : "1px solid rgba(196,181,253,0.12)",
+          color: "rgba(255,255,255,0.9)",
+        }}
+      >
+        <span>{selected?.label}</span>
+        <ChevronDown
+          className="w-3 h-3 transition-transform duration-150"
+          style={{
+            color: "rgba(196,181,253,0.5)",
+            transform: open ? "rotate(180deg)" : "none",
+          }}
+        />
+      </button>
+
+      {open && (
+        <div
+          className="absolute top-full mt-1 z-[500] rounded-xl overflow-y-auto"
+          style={{
+            background: "#0A031E",
+            border: "1px solid rgba(196,181,253,0.15)",
+            boxShadow: "0 12px 40px rgba(0,0,0,0.85)",
+            maxHeight: 200,
+            minWidth: 110,
+          }}
+        >
+          {options.map((opt) => {
+            const isActive = String(opt.value) === String(value);
+            return (
+              <button
+                key={opt.value}
+                ref={isActive ? selectedRef : null}
+                type="button"
+                onClick={() => {
+                  onChange({ target: { value: opt.value } });
+                  setOpen(false);
+                }}
+                className="w-full text-left px-3 py-1.5 text-xs capitalize transition-all duration-100"
+                style={{
+                  background: isActive ? "rgba(196,181,253,0.15)" : "transparent",
+                  color: isActive ? "#C4B5FD" : "rgba(255,255,255,0.65)",
+                  fontWeight: isActive ? 600 : 400,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.background = "transparent";
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -31,8 +124,8 @@ export function Calendar({
         dropdown_root: "relative",
         dropdown: "flex items-center",
         dropdown_label: "hidden",
-        months_dropdown: "bg-[#0A031E] border border-[#C4B5FD]/10 rounded-lg px-2 py-1 text-xs text-white/90 font-medium capitalize cursor-pointer focus:outline-none focus:border-[#C4B5FD]/30 appearance-none",
-        years_dropdown: "bg-[#0A031E] border border-[#C4B5FD]/10 rounded-lg px-2 py-1 text-xs text-white/90 font-medium cursor-pointer focus:outline-none focus:border-[#C4B5FD]/30 appearance-none",
+        months_dropdown: "hidden",
+        years_dropdown: "hidden",
         month_grid: "w-full border-collapse",
         weekdays: "flex",
         weekday: "text-[#C4B5FD]/30 w-9 h-8 font-semibold text-[0.6rem] uppercase tracking-widest text-center flex items-center justify-center",
@@ -54,6 +147,7 @@ export function Calendar({
           const Icon = orientation === "left" ? ChevronLeft : ChevronRight;
           return <Icon className="h-3.5 w-3.5" />;
         },
+        Dropdown: CustomDropdown,
       }}
       {...props}
     />
