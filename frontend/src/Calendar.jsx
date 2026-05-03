@@ -6,14 +6,9 @@ function cn(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-function CustomDropdown({ value, onChange, children }) {
+function CustomDropdown({ value, onChange, options = [] }) {
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef(null);
-
-  const options = React.Children.toArray(children).map((child) => ({
-    value: child.props.value,
-    label: child.props.children,
-  }));
 
   const selected = options.find((o) => String(o.value) === String(value));
 
