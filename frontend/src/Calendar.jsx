@@ -37,18 +37,19 @@ function CustomDropdown({ value, onChange, options = [] }) {
       <button
         type="button"
         onClick={handleOpen}
-        className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-medium capitalize cursor-pointer transition-all duration-150"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold capitalize cursor-pointer transition-all duration-150"
         style={{
-          background: "rgba(196,181,253,0.06)",
-          border: open ? "1px solid rgba(196,181,253,0.35)" : "1px solid rgba(196,181,253,0.12)",
-          color: "rgba(255,255,255,0.9)",
+          background: open ? "rgba(196,181,253,0.12)" : "rgba(196,181,253,0.07)",
+          border: open ? "1px solid rgba(196,181,253,0.4)" : "1px solid rgba(196,181,253,0.15)",
+          color: open ? "#C4B5FD" : "rgba(255,255,255,0.85)",
+          boxShadow: open ? "0 0 0 2px rgba(196,181,253,0.08)" : "none",
         }}
       >
         <span>{selected?.label}</span>
         <ChevronDown
-          className="w-3 h-3 transition-transform duration-150"
+          className="w-3 h-3 transition-transform duration-200"
           style={{
-            color: "rgba(196,181,253,0.5)",
+            color: open ? "#C4B5FD" : "rgba(196,181,253,0.4)",
             transform: open ? "rotate(180deg)" : "none",
           }}
         />
@@ -56,43 +57,58 @@ function CustomDropdown({ value, onChange, options = [] }) {
 
       {open && (
         <div
-          className="absolute top-full mt-1 z-[500] rounded-xl overflow-y-auto"
+          className="absolute top-full mt-1.5 z-[500] rounded-xl overflow-hidden"
           style={{
-            background: "#0A031E",
-            border: "1px solid rgba(196,181,253,0.15)",
-            boxShadow: "0 12px 40px rgba(0,0,0,0.85)",
-            maxHeight: 200,
-            minWidth: 110,
+            background: "linear-gradient(180deg, #0d0425 0%, #0A031E 100%)",
+            border: "1px solid rgba(196,181,253,0.18)",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.9), inset 0 1px 0 rgba(196,181,253,0.06)",
+            minWidth: 120,
           }}
         >
-          {options.map((opt) => {
-            const isActive = String(opt.value) === String(value);
-            return (
-              <button
-                key={opt.value}
-                ref={isActive ? selectedRef : null}
-                type="button"
-                onClick={() => {
-                  onChange({ target: { value: opt.value } });
-                  setOpen(false);
-                }}
-                className="w-full text-left px-3 py-1.5 text-xs capitalize transition-all duration-100"
-                style={{
-                  background: isActive ? "rgba(196,181,253,0.15)" : "transparent",
-                  color: isActive ? "#C4B5FD" : "rgba(255,255,255,0.65)",
-                  fontWeight: isActive ? 600 : 400,
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.background = "transparent";
-                }}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
+          <div
+            className="overflow-y-auto"
+            style={{
+              maxHeight: 180,
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(196,181,253,0.2) transparent",
+            }}
+          >
+            {options.map((opt) => {
+              const isActive = String(opt.value) === String(value);
+              return (
+                <button
+                  key={opt.value}
+                  ref={isActive ? selectedRef : null}
+                  type="button"
+                  onClick={() => {
+                    onChange({ target: { value: opt.value } });
+                    setOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-xs capitalize transition-colors duration-100 flex items-center gap-2"
+                  style={{
+                    background: isActive ? "rgba(196,181,253,0.12)" : "transparent",
+                    color: isActive ? "#C4B5FD" : "rgba(255,255,255,0.55)",
+                    fontWeight: isActive ? 700 : 400,
+                    borderLeft: isActive ? "2px solid rgba(196,181,253,0.6)" : "2px solid transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = "rgba(196,181,253,0.06)";
+                      e.currentTarget.style.color = "rgba(255,255,255,0.85)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "rgba(255,255,255,0.55)";
+                    }
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
