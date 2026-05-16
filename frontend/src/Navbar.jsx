@@ -20,9 +20,16 @@ const NAV_ITEMS = [
   { label: "Map", path: "/map" },
 ];
 
+const APK_DOWNLOAD_URL = "/sellekni.apk";
+
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone;
+
+  const [iosInstallOpen, setIosInstallOpen] = useState(false);
 
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user") || "null"));
 
@@ -822,14 +829,115 @@ useEffect(() => {
                 </button>
               ))}
             </div>
-            <div className="p-4 border-t border-white/10">
+            <div className="p-4 border-t border-white/10 flex flex-col gap-3">
+              {isAndroid && (
+                <a
+                  href={APK_DOWNLOAD_URL}
+                  download="sellekni.apk"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="auth-btn w-full gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M5 20h14v-2H5v2zm7-18L5.33 13h4.34V18h4.66V13h4.34L12 2z"/>
+                  </svg>
+                  Télécharger l'app Android
+                </a>
+              )}
+              {isIOS && (
+                <button
+                  onClick={() => { setMobileMenuOpen(false); setIosInstallOpen(true); }}
+                  className="auth-btn w-full gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2 8 7h3v7h2V7h3L12 2zM5 20h14v-2H5v2z"/>
+                  </svg>
+                  Ajouter à l'écran d'accueil
+                </button>
+              )}
               <div className="text-xs text-white/30 text-center">sellekni © 2026</div>
             </div>
           </div>
         </>
       )}
 
-   
+      {/* MODAL IOS — AJOUTER À L'ÉCRAN D'ACCUEIL */}
+      {iosInstallOpen && (
+        <div className="fixed inset-0 z-[400] flex items-end justify-center md:hidden" onClick={() => setIosInstallOpen(false)}>
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          <div
+            className="relative w-full max-w-sm rounded-t-3xl p-6 flex flex-col gap-5"
+            style={{ background: "#0A031E", border: "1px solid rgba(196,181,253,0.15)", borderBottom: "none" }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Poignée */}
+            <div className="w-10 h-1 rounded-full bg-white/20 mx-auto -mt-1" />
+
+            {/* En-tête */}
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="Sellekni" className="w-12 h-12 rounded-2xl" />
+              <div>
+                <div className="text-white font-bold text-base">Sellekni</div>
+                <div className="text-white/40 text-xs">Ajouter à l'écran d'accueil</div>
+              </div>
+              <button onClick={() => setIosInstallOpen(false)} className="ml-auto text-white/40 hover:text-white text-xl w-8 h-8 flex items-center justify-center">✕</button>
+            </div>
+
+            <div className="h-px bg-white/[0.07]" />
+
+            {/* Étapes */}
+            <div className="flex flex-col gap-4">
+              {/* Étape 1 */}
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ background: "rgba(196,181,253,0.12)", color: "#C4B5FD" }}>1</div>
+                <div>
+                  <div className="text-white/80 text-sm font-medium">Appuyez sur le bouton Partager</div>
+                  <div className="text-white/40 text-xs mt-0.5">Icône en bas de Safari</div>
+                  <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "rgba(196,181,253,0.07)" }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 shrink-0">
+                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                      <polyline points="16 6 12 2 8 6"/>
+                      <line x1="12" y1="2" x2="12" y2="15"/>
+                    </svg>
+                    <span className="text-[#C4B5FD] text-sm font-medium">Partager</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Étape 2 */}
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ background: "rgba(196,181,253,0.12)", color: "#C4B5FD" }}>2</div>
+                <div>
+                  <div className="text-white/80 text-sm font-medium">Faites défiler et appuyez sur</div>
+                  <div className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "rgba(196,181,253,0.07)" }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#C4B5FD" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 shrink-0">
+                      <rect x="3" y="3" width="7" height="7" rx="1"/>
+                      <rect x="14" y="3" width="7" height="7" rx="1"/>
+                      <rect x="3" y="14" width="7" height="7" rx="1"/>
+                      <path d="M14 14h7v7h-7z" opacity=".4"/>
+                      <path d="M17.5 14v7M14 17.5h7" stroke="#C4B5FD" strokeWidth="2"/>
+                    </svg>
+                    <span className="text-[#C4B5FD] text-sm font-medium">Sur l'écran d'accueil</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Étape 3 */}
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ background: "rgba(196,181,253,0.12)", color: "#C4B5FD" }}>3</div>
+                <div>
+                  <div className="text-white/80 text-sm font-medium">Appuyez sur <span className="text-[#C4B5FD]">Ajouter</span> en haut à droite</div>
+                  <div className="text-white/40 text-xs mt-0.5">Sellekni apparaîtra sur votre écran d'accueil</div>
+                </div>
+              </div>
+            </div>
+
+            <button onClick={() => setIosInstallOpen(false)} className="auth-btn w-full mt-1">
+              Compris !
+            </button>
+          </div>
+        </div>
+      )}
+
 {/* NOTIFS MOBILE */}
 {notifOpen && (
   <div 
