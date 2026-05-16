@@ -26,8 +26,11 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isAndroid = /android/i.test(navigator.userAgent);
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.navigator.standalone;
+  const ua = navigator.userAgent;
+  // Sur Android : afficher seulement dans le navigateur, pas dans le WebView de l'APK installé
+  const isAndroid = /android/i.test(ua) && !/wv\b|; wv\)/.test(ua);
+  // Sur iOS : afficher seulement dans Safari, pas quand ajouté à l'écran d'accueil (standalone)
+  const isIOS = /iphone|ipad|ipod/i.test(ua) && !window.navigator.standalone;
 
   const [iosInstallOpen, setIosInstallOpen] = useState(false);
 
