@@ -2,11 +2,15 @@
 @import "leaflet/dist/leaflet.css";
 
 /* ── Global purple gradient background ── */
-html, body {
+html {
   background: linear-gradient(160deg, #13002E 0%, #2D1069 40%, #1E0855 70%, #13002E 100%);
   background-attachment: fixed;
   min-height: 100%;
-  /* Safe area uniquement haut/bas pour éviter le notch et la barre home */
+}
+
+body {
+  min-height: 100%;
+  /* Safe area sur body uniquement (évite le doublement html+body) */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
 }
