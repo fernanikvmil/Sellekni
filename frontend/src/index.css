@@ -6,11 +6,9 @@ html, body {
   background: linear-gradient(160deg, #13002E 0%, #2D1069 40%, #1E0855 70%, #13002E 100%);
   background-attachment: fixed;
   min-height: 100%;
-  /* Safe area pour Android (barre de navigation, encoche) */
+  /* Safe area uniquement haut/bas pour éviter le notch et la barre home */
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
 }
 
 /* ── Marges mobiles Android ── */
