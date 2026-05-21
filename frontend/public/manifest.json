@@ -1,0 +1,24 @@
+{
+  "name": "Sellekni",
+  "short_name": "Sellekni",
+  "description": "La plateforme algérienne qui connecte clients et techniciens",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A031E",
+  "theme_color": "#0A031E",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

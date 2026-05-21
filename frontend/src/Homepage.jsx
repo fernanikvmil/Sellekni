@@ -221,7 +221,7 @@ export default function Homepage() {
       )}
 
       {/* ── HERO SECTION ── */}
-      <section className={`relative z-10 min-h-[85vh] flex items-center px-5 sm:px-8 md:px-16 ${mounted ? "fade-up" : "opacity-0"}`} style={{ animationDelay: "0.1s" }}>
+      <section className={`relative z-10 min-h-[85vh] flex items-center px-2 sm:px-6 md:px-16 ${mounted ? "fade-up" : "opacity-0"}`} style={{ animationDelay: "0.1s" }}>
         <div className="w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
           
           {/* Partie gauche - Texte */}
@@ -349,7 +349,7 @@ export default function Homepage() {
       </section>
 
            {/* ── SERVICES SECTION ── */}
-      <section id="services" className="relative z-10 py-12 px-5 sm:px-8 md:px-16">
+      <section id="services" className="relative z-10 py-12 px-2 sm:px-6 md:px-16">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold mb-2 bg-gradient-to-r from-white via-violet-300 to-white bg-clip-text text-transparent">
@@ -381,7 +381,7 @@ export default function Homepage() {
       </section>
 
       {/* ── HOW IT WORKS SECTION ── */}
-      <section className="relative z-10 py-20 px-5 sm:px-8 md:px-16 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
+      <section className="relative z-10 py-20 px-2 sm:px-6 md:px-16 bg-gradient-to-b from-transparent via-white/[0.02] to-transparent">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold mb-3 bg-gradient-to-r from-white via-violet-300 to-white bg-clip-text text-transparent">
@@ -416,7 +416,7 @@ export default function Homepage() {
       </section>
 
       {/* ── FEATURES SECTION ── */}
-      <section className="relative z-10 py-20 px-5 sm:px-8 md:px-16">
+      <section className="relative z-10 py-20 px-2 sm:px-6 md:px-16">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map((feature, idx) => (
@@ -442,7 +442,7 @@ export default function Homepage() {
       </section>
 
       {/* ── CTA SECTION ── */}
-      <section className="relative z-10 py-16 px-5 sm:px-8">
+      <section className="relative z-10 py-16 px-2 sm:px-6">
         <div className="max-w-4xl mx-auto text-center">
           <div className="rounded-3xl" style={{
             position:"relative", overflow:"hidden", isolation:"isolate",
@@ -472,7 +472,7 @@ export default function Homepage() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="relative z-10 border-t border-white/[0.06] px-5 sm:px-8 py-8 mt-10">
+      <footer className="relative z-10 border-t border-white/[0.06] px-2 sm:px-6 py-8 mt-10">
         <div className="max-w-5xl mx-auto flex flex-col items-center gap-5">
           
           {/* Liens et réseaux sociaux */}

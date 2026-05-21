@@ -681,7 +681,7 @@ useEffect(() => {
       />
 
       {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-8 py-4 backdrop-blur-xl" style={{ background: "rgba(14,5,32,0.92)", borderBottom: "1px solid rgba(196,181,253,0.12)" }}>
+      <nav className="sticky top-0 z-50 flex items-center justify-between px-2 sm:px-6 py-4 backdrop-blur-xl" style={{ background: "rgba(14,5,32,0.92)", borderBottom: "1px solid rgba(196,181,253,0.12)" }}>
 
         <div className="flex items-center gap-2">
           {/* Hamburger à gauche - mobile uniquement */}
