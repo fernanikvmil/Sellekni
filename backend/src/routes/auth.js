@@ -245,48 +245,97 @@ router.get("/verify-email", async (req, res) => {
   }
 });
 
-// ─── MOT DE PASSE OUBLIÉ ───────────────────────────────────────────────────────
+// ─── MOT DE PASSE OUBLIÉ — envoie un code 6 chiffres ─────────────────────────
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(200).json({ message: "Si ce compte existe, un email a été envoyé." });
+    if (!email) return res.status(400).json({ message: "Email requis." });
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = new Date(Date.now() + 1000 * 60 * 30);
+    const user = await User.findOne({ email });
+    // Ne pas révéler si le compte existe ou non (sécurité)
+    if (!user) return res.status(200).json({ message: "Si ce compte existe, un code a été envoyé." });
+
+    const code = generateVerificationCode(); // 6 chiffres
+    user.pwdChangeCode = code;
+    user.pwdChangeCodeExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 min
     await user.save();
 
+    console.log("=========================================");
+    console.log(`📧 Reset MDP pour: ${email}`);
+    console.log(`🔐 CODE RESET: ${code}`);
+    console.log("=========================================");
+
     try {
-      await mailjetResetEmail(email, resetToken);
+      await Promise.race([
+        sendVerificationCodeEmail(email, code, user.username),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 10000))
+      ]);
+      console.log("✅ Email reset envoyé");
     } catch (emailError) {
       console.log("⚠️ Email reset non envoyé:", emailError.message);
     }
 
-    res.status(200).json({ message: "Si ce compte existe, un email a été envoyé." });
+    res.status(200).json({ message: "Code envoyé !" });
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
 });
 
-// ─── RÉINITIALISATION MOT DE PASSE ────────────────────────────────────────────
-router.post("/reset-password/:token", async (req, res) => {
+// ─── RENVOYER LE CODE RESET ───────────────────────────────────────────────────
+router.post("/resend-reset-code", async (req, res) => {
   try {
-    const { token } = req.params;
-    const { password } = req.body;
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email requis." });
 
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: new Date() },
-    });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(200).json({ message: "Si ce compte existe, un nouveau code a été envoyé." });
 
-    if (!user) return res.status(400).json({ message: "Lien invalide ou expiré." });
+    const code = generateVerificationCode();
+    user.pwdChangeCode = code;
+    user.pwdChangeCodeExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
+
+    console.log(`🔐 NOUVEAU CODE RESET pour ${email}: ${code}`);
+
+    try {
+      await Promise.race([
+        sendVerificationCodeEmail(email, code, user.username),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 10000))
+      ]);
+    } catch (emailError) {
+      console.log("⚠️ Email non envoyé:", emailError.message);
+    }
+
+    res.json({ message: "Nouveau code envoyé !" });
+  } catch (err) {
+    res.status(500).json({ message: "Erreur serveur", error: err.message });
+  }
+});
+
+// ─── RÉINITIALISATION MOT DE PASSE — via code 6 chiffres ─────────────────────
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword)
+      return res.status(400).json({ message: "Tous les champs sont requis." });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "Compte introuvable." });
+
+    if (!user.pwdChangeCode || user.pwdChangeCode !== code)
+      return res.status(400).json({ message: "Code invalide." });
+
+    if (user.pwdChangeCodeExpiry < new Date())
+      return res.status(400).json({ message: "Code expiré. Demandez un nouveau code." });
 
     const pwdRegex = /^(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{6,}$/;
-    if (!pwdRegex.test(password))
+    if (!pwdRegex.test(newPassword))
       return res.status(400).json({ message: "Le mot de passe doit contenir au moins 6 caractères, une majuscule et un caractère spécial." });
 
-    user.password = await bcrypt.hash(password, 10);
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.pwdChangeCode = null;
+    user.pwdChangeCodeExpiry = null;
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
     await user.save();

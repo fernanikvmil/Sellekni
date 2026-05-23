@@ -39,7 +39,7 @@ function App() {
       <Route path="/techniciens" element={<Techniciens/>}/>
       <Route path="/map" element={<MapTechniciens/>}/>
       <Route path="/forgot-password" element={<ForgotPassword/>}/>
-      <Route path="/reset-password/:token" element={<ResetPassword/>}/>
+      <Route path="/reset-password" element={<ResetPassword/>}/>
       <Route path="/annonces" element={<Annonces/>}/>
       <Route path="/profile" element={<Profile/>}/>
       <Route path="/forum" element={<Forum/>}/>
