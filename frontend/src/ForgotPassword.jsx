@@ -1,4 +1,4 @@
-import { Lock, Mail, Eye, EyeOff, KeyRound, Check, SquareCheckBig } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, KeyRound, Check } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 

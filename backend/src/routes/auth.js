@@ -1,9 +1,8 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
 import { User } from "../models/Schemas.js";
-import { sendVerificationCodeEmail, sendPasswordResetEmail as mailjetResetEmail } from "../library/mailer.js";
+import { sendVerificationCodeEmail } from "../library/mailer.js";
 
 const router = express.Router();
 
