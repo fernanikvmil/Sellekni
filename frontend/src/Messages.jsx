@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { authHeaders, authFormHeaders } from "./api";
@@ -17,14 +18,17 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [reply, setReply] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [pendingFiles, setPendingFiles] = useState([]);   // photo confirmation
+  const [pendingFiles, setPendingFiles] = useState([]);
   const [sending, setSending] = useState(false);
   const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const deleteTargetRef = useRef(null); // snapshot { convId, messageIndex, isMainMessage }
+  const [showScrollButton, setShowScrollButton] = useState(false); // NOUVEAU
+  const deleteTargetRef = useRef(null);
   const selected = conversations.find(c => c._id === selectedId);
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
+  const chatContainerRef = useRef(null); // NOUVEAU
+
   // ---------------- FETCH ----------------
   const fetchMessages = async () => {
     try {
@@ -47,14 +51,25 @@ export default function Messages() {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-  }, [conversations, selectedId]);
+  // SCROLL SUPPRIMÉ - plus aucun scroll automatique
 
   useEffect(() => {
     if (!selected || !user) return;
     markConvAsSeen(selected);
   }, [selected?._id, selected?.reponses?.length]);
+
+  // ---------------- DÉTECTER SCROLL POUR BOUTON ----------------
+  const handleScroll = () => {
+    if (!chatContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setShowScrollButton(!isNearBottom);
+  };
+
+  const scrollToBottom = () => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowScrollButton(false);
+  };
 
   // ---------------- OPEN ----------------
   const openConversation = async (conv) => {
@@ -62,10 +77,12 @@ export default function Messages() {
     setReply("");
     setSelectedFiles([]);
     setPendingFiles([]);
+    setShowScrollButton(false); // Reset bouton quand on change de conversation
     try {
       await fetch(`/api/messages/${conv._id}/lu`, { method: "PATCH", headers: authHeaders() });
     } catch (err) { console.error("Erreur mark as read:", err); }
     markConvAsSeen(conv);
+     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   };
 
   const markConvAsSeen = async (conv) => {
@@ -85,7 +102,6 @@ export default function Messages() {
 
   // ---------------- DELETE MESSAGE ----------------
   const deleteMessage = (messageIndex, isMainMessage = false) => {
-    // Snapshot tout de suite pour éviter les closures stales
     deleteTargetRef.current = {
       convId: selected?._id,
       messageIndex,
@@ -106,7 +122,6 @@ export default function Messages() {
       });
       const data = await res.json();
       if (data.success) {
-        // Mise à jour optimiste : on retire le message localement sans toucher selectedId
         setConversations(prev => prev.map(c => {
           if (c._id !== convId) return c;
           if (isMainMessage) {
@@ -115,9 +130,7 @@ export default function Messages() {
             return { ...c, reponses: (c.reponses || []).filter((_, i) => i !== messageIndex) };
           }
         }));
-        // On reste sur la même conversation
         setSelectedId(convId);
-        // Sync en arrière-plan
         fetchMessages().then(() => setSelectedId(convId));
       } else {
         alert(data.message || "Erreur lors de la suppression");
@@ -130,9 +143,9 @@ export default function Messages() {
 
   // ---------------- SEND (texte + fichiers + vocal) ----------------
   const sendReply = async (audioFile = null, directFiles = null) => {
-    const textToSend  = reply.trim();
+    const textToSend = reply.trim();
     const filesToSend = directFiles ?? selectedFiles;
-    const hasText  = textToSend.length > 0;
+    const hasText = textToSend.length > 0;
     const hasFiles = filesToSend.length > 0;
     const hasAudio = !!audioFile;
     if (!hasText && !hasFiles && !hasAudio) return;
@@ -180,7 +193,9 @@ export default function Messages() {
         await fetchMessages();
       }
 
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      // SCROLL AUTOMATIQUE SUPPRIMÉ - plus de scroll après envoi
+      // L'utilisateur devra cliquer sur le bouton si nécessaire
+
     } catch (err) {
       console.error("Erreur lors de l'envoi:", err);
       if (!directFiles) {
@@ -252,13 +267,10 @@ export default function Messages() {
   const getUnreadCount = (conv) => {
     if (!user?.username) return 0;
     let count = 0;
-    // Main message from other user, not yet seen
     if (conv.de !== user.username && conv.vu !== true) count++;
-    // Replies from other user, not yet seen
     (conv.reponses || []).forEach(r => {
       if (r.de && r.de !== user.username && r.vu !== true) count++;
     });
-    // Fallback: conv-level read flag
     if (count === 0 && conv.lu === false && conv.a === user.username) return 1;
     return count;
   };
@@ -283,8 +295,6 @@ export default function Messages() {
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-md">
           <div className="relative w-[380px] max-w-[92vw] rounded-3xl overflow-hidden shadow-[0_32px_100px_rgba(0,0,0,0.8)]"
             style={{ background: "linear-gradient(160deg,#0f0525 0%,#0a0a1e 100%)", border: "1px solid rgba(255,255,255,0.08)" }}>
-
-            {/* Header */}
             <div className="px-5 pt-5 pb-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -303,8 +313,6 @@ export default function Messages() {
                 </div>
               </div>
             </div>
-
-            {/* Preview grid */}
             <div className="p-4">
               <div className={`grid gap-2 ${pendingFiles.length === 1 ? "grid-cols-1" : pendingFiles.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
                 {pendingFiles.map((f, i) => {
@@ -315,21 +323,11 @@ export default function Messages() {
                     <div key={i} className="relative group rounded-xl overflow-hidden"
                       style={{ aspectRatio: pendingFiles.length === 1 ? "16/9" : "1/1" }}>
                       {isVideo ? (
-                        <video
-                          src={url}
-                          muted
-                          className="w-full h-full object-cover"
-                        />
+                        <video src={url} muted className="w-full h-full object-cover" />
                       ) : (
-                        <img
-                          src={url}
-                          className="w-full h-full object-cover"
-                          alt=""
-                        />
+                        <img src={url} className="w-full h-full object-cover" alt="" />
                       )}
-                      {/* Dark overlay on hover */}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all" />
-                      {/* Type badge */}
                       <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-medium text-white/80"
                         style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
                         {isVideo ? (
@@ -345,7 +343,6 @@ export default function Messages() {
                         )}
                         · {sizeMB}Mo
                       </div>
-                      {/* Remove button */}
                       <button
                         type="button"
                         onClick={() => setPendingFiles(prev => prev.filter((_, idx) => idx !== i))}
@@ -359,8 +356,6 @@ export default function Messages() {
                 })}
               </div>
             </div>
-
-            {/* Actions */}
             <div className="px-4 pb-4 flex gap-2.5">
               <button
                 type="button"
@@ -395,11 +390,9 @@ export default function Messages() {
 
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ── SIDEBAR ── */}
+        {/* SIDEBAR */}
         <div className={`${selectedId ? "hidden sm:flex" : "flex"} w-full sm:w-[300px] flex-col flex-shrink-0`}
           style={{ background: "linear-gradient(180deg,#060218 0%,#080a28 100%)", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
-
-          {/* Sidebar header */}
           <div className="px-5 pt-5 pb-4 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -425,7 +418,6 @@ export default function Messages() {
               })()}
             </div>
           </div>
-
           <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(196,181,253,0.2) transparent" }}>
             {loading ? (
               <div className="p-6 flex flex-col gap-3">
@@ -466,13 +458,11 @@ export default function Messages() {
                     onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = isActive ? "linear-gradient(90deg,rgba(139,92,246,0.12) 0%,rgba(139,92,246,0.04) 100%)" : hasUnread ? "rgba(139,92,246,0.04)" : "transparent"; }}
                   >
-                    {/* Active accent bar */}
                     {isActive && (
                       <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full"
                         style={{ background: "linear-gradient(180deg,#8B5CF6,#6366f1)" }} />
                     )}
                     <div className="flex items-center gap-3">
-                      {/* Avatar */}
                       <div className="relative flex-shrink-0">
                         <div className={`w-11 h-11 rounded-full overflow-hidden ${hasUnread ? "ring-[1.5px] ring-violet-500/70" : "ring-1 ring-white/[0.06]"}`}>
                           {conv.otherUserPhoto ? (
@@ -496,7 +486,6 @@ export default function Messages() {
                             style={{ background: "linear-gradient(135deg,#8B5CF6,#6366f1)", borderColor: "#060218", boxShadow: "0 0 8px rgba(139,92,246,0.8)" }} />
                         )}
                       </div>
-
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline justify-between gap-1 mb-[3px]">
                           <p className={`truncate leading-tight ${hasUnread
@@ -532,9 +521,8 @@ export default function Messages() {
           </div>
         </div>
 
-        {/* ── CHAT ── */}
-        <div className={`${selectedId ? "flex" : "hidden"} sm:flex flex-1 flex-col overflow-hidden`}>
-
+        {/* CHAT */}
+        <div className={`${selectedId ? "flex" : "hidden"} sm:flex flex-1 flex-col overflow-hidden relative`}>
           {!selected ? (
             <div className="flex flex-col items-center justify-center flex-1 text-white/25">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-3xl"
@@ -546,14 +534,13 @@ export default function Messages() {
             </div>
           ) : (
             <>
-              {/* HEADER sticky */}
+              {/* HEADER */}
               <div className="px-3 sm:px-5 py-3.5 flex items-center gap-3 flex-shrink-0 sticky top-0 z-10"
                 style={{
                   background: "linear-gradient(135deg,rgba(9,3,29,0.97) 0%,rgba(15,5,40,0.97) 100%)",
                   backdropFilter: "blur(16px)",
                   borderBottom: "1px solid rgba(255,255,255,0.06)"
                 }}>
-                {/* Back button (mobile only) */}
                 <button
                   type="button"
                   onClick={() => setSelectedId(null)}
@@ -593,48 +580,50 @@ export default function Messages() {
                 </div>
               </div>
 
-              {/* MESSAGES */}
-              <div className="flex-1 overflow-y-auto px-2 py-1 space-y-2"
-                style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(196,181,253,0.15) transparent" }}>
+              {/* MESSAGES avec ref pour détecter le scroll */}
+              <div 
+                ref={chatContainerRef}
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto px-2 py-1 space-y-2"
+                style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(196,181,253,0.15) transparent" }}
+              >
                 {buildThread(selected).map((msg, i) => {
                   const isMe = msg.de === user.username;
-                  const hasText  = msg.message?.trim().length > 0;
+                  const hasText = msg.message?.trim().length > 0;
                   const hasMedia = msg.media?.length > 0;
                   const photoOnly = !hasText && hasMedia && msg.media.every(m => m.type === "image");
                   if (!hasText && !hasMedia) return null;
 
                   return (
                     <div key={i} className={`flex flex-col group ${isMe ? "items-end" : "items-start"}`}>
-                     {photoOnly ? (
-  /* Photo-only: no bubble, images in a clean grid */
-  <div className={`flex flex-col gap-1.5 ${isMe ? "items-end" : "items-start"}`}>
-    <div className={`${msg.media.length > 1 ? "grid grid-cols-2 gap-1.5" : "flex"}`}
-      style={{ maxWidth: msg.media.length > 1 ? "260px" : "220px" }}>
-      {msg.media.map((media, idx) => (
-        <div key={idx} className="relative group overflow-hidden rounded-2xl"
-          style={{ borderRadius: msg.media.length > 1 ? (idx === 0 ? "16px 4px 4px 16px" : idx === 1 ? "4px 16px 16px 4px" : "8px") : "18px" }}>
-          <img
-            src={media.url}
-            className="w-full object-cover cursor-pointer transition-transform duration-200 group-hover:scale-[1.03]"
-            style={{ maxHeight: msg.media.length === 1 ? "240px" : "140px", display: "block" }}
-            alt="photo"
-            onClick={() => setZoomedImage(media.url)}
-          />
-          {/* Expand icon overlay */}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-all cursor-pointer"
-            onClick={() => setZoomedImage(media.url)}>
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-) : (
+                      {photoOnly ? (
+                        <div className={`flex flex-col gap-1.5 ${isMe ? "items-end" : "items-start"}`}>
+                          <div className={`${msg.media.length > 1 ? "grid grid-cols-2 gap-1.5" : "flex"}`}
+                            style={{ maxWidth: msg.media.length > 1 ? "260px" : "220px" }}>
+                            {msg.media.map((media, idx) => (
+                              <div key={idx} className="relative group overflow-hidden rounded-2xl"
+                                style={{ borderRadius: msg.media.length > 1 ? (idx === 0 ? "16px 4px 4px 16px" : idx === 1 ? "4px 16px 16px 4px" : "8px") : "18px" }}>
+                                <img
+                                  src={media.url}
+                                  className="w-full object-cover cursor-pointer transition-transform duration-200 group-hover:scale-[1.03]"
+                                  style={{ maxHeight: msg.media.length === 1 ? "240px" : "140px", display: "block" }}
+                                  alt="photo"
+                                  onClick={() => setZoomedImage(media.url)}
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-all cursor-pointer"
+                                  onClick={() => setZoomedImage(media.url)}>
+                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-full flex items-center justify-center"
+                                    style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                                    </svg>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
                         <div className={`max-w-[80%] sm:max-w-[68%] overflow-hidden ${
                           isMe
                             ? "rounded-2xl rounded-br-sm shadow-[0_4px_24px_rgba(109,40,217,0.3)]"
@@ -649,31 +638,26 @@ export default function Messages() {
                             <div className="flex flex-col gap-0">
                               {msg.media.map((media, idx) => (
                                 <div key={idx}>
-                                 {media.type === "image" ? (
-  <div className="relative group cursor-pointer overflow-hidden" onClick={() => setZoomedImage(media.url)}>
-    <img
-      src={media.url}
-      className="w-full max-w-[260px] object-cover transition-transform duration-200 group-hover:scale-[1.02]"
-      style={{ maxHeight: "220px", display: "block" }}
-      alt="message"
-    />
-    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/15 transition-all">
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity w-9 h-9 rounded-full flex items-center justify-center"
-        style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-        </svg>
-      </div>
-    </div>
-  </div>
-) : media.type === "video" ? (
-                                    <div className="relative overflow-hidden" style={{ maxWidth: "260px" }}>
-                                      <video
+                                  {media.type === "image" ? (
+                                    <div className="relative group cursor-pointer overflow-hidden" onClick={() => setZoomedImage(media.url)}>
+                                      <img
                                         src={media.url}
-                                        controls
-                                        className="w-full block"
-                                        style={{ maxHeight: "220px", background: "#000" }}
+                                        className="w-full max-w-[260px] object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+                                        style={{ maxHeight: "220px", display: "block" }}
+                                        alt="message"
                                       />
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/15 transition-all">
+                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity w-9 h-9 rounded-full flex items-center justify-center"
+                                          style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}>
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                                          </svg>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : media.type === "video" ? (
+                                    <div className="relative overflow-hidden" style={{ maxWidth: "260px" }}>
+                                      <video src={media.url} controls className="w-full block" style={{ maxHeight: "220px", background: "#000" }} />
                                     </div>
                                   ) : media.type === "audio" ? (
                                     <div className="px-3 py-2">
@@ -689,8 +673,6 @@ export default function Messages() {
                           )}
                         </div>
                       )}
-
-                      {/* Status + time + delete */}
                       <div className={`flex items-center gap-2 mt-1 ${isMe ? "flex-row-reverse" : ""}`}>
                         {msg.createdAt && (
                           <span className="text-[10px] text-white/20">{formatTime(msg.createdAt)}</span>
@@ -701,11 +683,11 @@ export default function Messages() {
                               {msg.vu ? " ✓✓Vu" : "✓"}
                             </span>
                             <button
-                            type="button"
-                            onClick={() => deleteMessage(msg.replyIndex, msg.isMain === true)}
-                           className="text-[11px] text-red-400/50 hover:text-red-300 transition-opacity md:opacity-0 md:group-hover:opacity-100 opacity-100"
+                              type="button"
+                              onClick={() => deleteMessage(msg.replyIndex, msg.isMain === true)}
+                              className="text-[11px] text-red-400/50 hover:text-red-300 transition-opacity md:opacity-0 md:group-hover:opacity-100 opacity-100"
                             >
-                            🗑
+                              🗑
                             </button>
                           </>
                         )}
@@ -716,11 +698,22 @@ export default function Messages() {
                 <div ref={bottomRef} />
               </div>
 
+              {/* BOUTON FLOATING POUR DESCENDRE */}
+              {showScrollButton && (
+                <button
+                  onClick={scrollToBottom}
+                  className="fixed bottom-20 right-4 z-20 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+                  style={{ background: "linear-gradient(135deg,#8B5CF6,#1F48B5)", boxShadow: "0 4px 20px rgba(139,92,246,0.5)" }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M19 12l-7 7-7-7"/>
+                  </svg>
+                </button>
+              )}
+
               {/* INPUT */}
               <div className="px-3 py-3 flex-shrink-0"
                 style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(6,2,24,0.92)", backdropFilter: "blur(12px)", paddingBottom: "max(6px, env(safe-area-inset-bottom))" }}>
-
-                {/* Selected files preview */}
                 {selectedFiles.length > 0 && (
                   <div className="flex items-center gap-1.5 mb-2 flex-wrap">
                     {selectedFiles.map((f, i) => (
@@ -735,9 +728,7 @@ export default function Messages() {
                     ))}
                   </div>
                 )}
-
                 <div className="flex items-center gap-2">
-                  {/* Hidden file input */}
                   <input type="file" multiple hidden ref={fileInputRef}
                     accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
                     onChange={(e) => {
@@ -746,24 +737,18 @@ export default function Messages() {
                       if (files.length > 0) setPendingFiles(files);
                     }}
                   />
-
-                  {/* Attach button — hidden while recording */}
                   {!isVoiceRecording && (
                     <MediaUploadButton
                       onClick={() => fileInputRef.current?.click()}
                       disabled={sending}
                     />
                   )}
-
-                  {/* Voice recorder — expands to flex-1 while recording */}
                   <VoiceRecorder
                     onRecordingComplete={(audioFile) => sendReply(audioFile)}
                     onRecordingStart={() => setIsVoiceRecording(true)}
                     onRecordingEnd={() => setIsVoiceRecording(false)}
                     disabled={!selected || sending}
                   />
-
-                  {/* Text input — hidden while recording */}
                   {!isVoiceRecording && (
                     <MessageTextInput
                       value={reply}
@@ -773,28 +758,26 @@ export default function Messages() {
                       disabled={sending}
                     />
                   )}
-
-                  {/* Send button — hidden while recording */}
                   {!isVoiceRecording && (
-                  <button
-                    type="button"
-                    onClick={() => sendReply()}
-                    disabled={(!reply.trim() && selectedFiles.length === 0) || sending}
-                    className="w-9 h-9 flex items-center justify-center rounded-xl transition-all flex-shrink-0 disabled:opacity-25 hover:opacity-90 active:scale-95"
-                    style={{ background: (reply.trim() || selectedFiles.length > 0) && !sending
-                      ? "linear-gradient(135deg,#8B5CF6,#1F48B5)"
-                      : "rgba(255,255,255,0.05)",
-                      border: "1px solid rgba(255,255,255,0.08)"
-                    }}
-                  >
-                    {sending ? (
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-                      </svg>
-                    )}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => sendReply()}
+                      disabled={(!reply.trim() && selectedFiles.length === 0) || sending}
+                      className="w-9 h-9 flex items-center justify-center rounded-xl transition-all flex-shrink-0 disabled:opacity-25 hover:opacity-90 active:scale-95"
+                      style={{ background: (reply.trim() || selectedFiles.length > 0) && !sending
+                        ? "linear-gradient(135deg,#8B5CF6,#1F48B5)"
+                        : "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.08)"
+                      }}
+                    >
+                      {sending ? (
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                      )}
+                    </button>
                   )}
                 </div>
               </div>
@@ -804,4 +787,4 @@ export default function Messages() {
       </div>
     </div>
   );
-}
+}  

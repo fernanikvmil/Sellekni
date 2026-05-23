@@ -1,3 +1,4 @@
+
 import express from 'express'
 import multer from 'multer';
 import { Service, Notification, User } from '../models/Schemas.js'
@@ -72,9 +73,24 @@ router.get("/:id", async (req, res) => {
       }
     }
 
+    const commentairesAvecPhotos = await Promise.all(
+      (service.commentaires || []).map(async (commentaire) => {
+        let userPhoto = null;
+        if (commentaire.auteur) {
+          const user = await User.findOne({ username: commentaire.auteur });
+          userPhoto = user?.photo || null;
+        }
+        return {
+          ...commentaire.toObject(),
+          photo: userPhoto
+        };
+      })
+    );
+
     res.json({
       ...service.toObject(),
-      vendeur
+      vendeur,
+      commentaires: commentairesAvecPhotos
     });
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
@@ -87,9 +103,20 @@ router.post("/:id/commentaires", requireAuth, async (req, res) => {
     const service = await Service.findById(req.params.id);
     if (!service) return res.status(404).json({ message: "Service introuvable" });
     if (!contenu) return res.status(400).json({ message: "Commentaire vide" });
-    service.commentaires.push({ contenu, auteur, role });
+    
+    const user = await User.findOne({ username: auteur });
+    const userPhoto = user?.photo || null;
+    
+    service.commentaires.push({ 
+      contenu, 
+      auteur, 
+      role,
+      photo: userPhoto
+    });
     await service.save();
+    
     const commentaire = service.commentaires[service.commentaires.length - 1];
+    
     if (auteur !== service.auteur) {
       await Notification.create({
         destinataire: service.auteur,
@@ -99,7 +126,13 @@ router.post("/:id/commentaires", requireAuth, async (req, res) => {
         message: `${auteur} a commenté votre service "${service.titre}"`,
       });
     }
-    res.status(201).json({ commentaire });
+    
+    res.status(201).json({ 
+      commentaire: {
+        ...commentaire.toObject(),
+        photo: userPhoto
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: "Erreur serveur", error: err.message });
   }
@@ -134,7 +167,6 @@ router.delete("/:id", requireAuth, async (req, res) => {
   }
 });
 
-// ── Signalement d'un service ──────────────────────────────────────────────────
 router.post("/:id/signaler", requireAuth, async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { authHeaders, authFormHeaders } from "./api";
@@ -27,9 +28,7 @@ export default function Navbar() {
   const location = useLocation();
 
   const ua = navigator.userAgent;
-  // Sur Android : afficher seulement dans le navigateur, pas dans le WebView de l'APK installé
   const isAndroid = /android/i.test(ua) && !/wv\b|; wv\)/.test(ua);
-  // Sur iOS : afficher seulement dans Safari, pas quand ajouté à l'écran d'accueil (standalone)
   const isIOS = /iphone|ipad|ipod/i.test(ua) && !window.navigator.standalone;
 
   const [iosInstallOpen, setIosInstallOpen] = useState(false);
@@ -57,7 +56,11 @@ export default function Navbar() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [pendingFiles, setPendingFiles] = useState([]); // photo confirmation
+  const [pendingFiles, setPendingFiles] = useState([]);
+  
+  // NOUVEAUX STATES POUR LE BOUTON FLOTTANT
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const chatMessagesRef = useRef(null);
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
@@ -69,7 +72,7 @@ export default function Navbar() {
   const [zoomedImage, setZoomedImage] = useState(null);
   const [clearHistoryConfirm, setClearHistoryConfirm] = useState(false);
   const [deleteMessageConfirm, setDeleteMessageConfirm] = useState(false);
-  const deleteNavTargetRef = useRef(null); // snapshot { convId, replyIndex, isMain }
+  const deleteNavTargetRef = useRef(null);
 
   const WILAYAS = [
     "Adrar","Chlef","Laghouat","Oum El Bouaghi","Batna","Béjaïa","Biskra",
@@ -90,8 +93,21 @@ export default function Navbar() {
   const chatRef      = useRef(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
-const modalRef = useRef(null);
-  // Charger l'historique quand la modale s'ouvre
+  const modalRef = useRef(null);
+
+  // FONCTIONS POUR LE BOUTON FLOTTANT
+  const handleChatScroll = () => {
+    if (!chatMessagesRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatMessagesRef.current;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setShowScrollButton(!isNearBottom);
+  };
+
+  const scrollToBottomChat = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowScrollButton(false);
+  };
+
   useEffect(() => {
     if (searchOpen && user) {
       loadSearchHistory();
@@ -99,9 +115,9 @@ const modalRef = useRef(null);
   }, [searchOpen, user]);
 
   const closeZoomModal = (e) => {
-     e.stopPropagation(); 
-  if (e.target === e.currentTarget) setZoomedImage(null);
-};
+    e.stopPropagation(); 
+    if (e.target === e.currentTarget) setZoomedImage(null);
+  };
 
   const loadSearchHistory = async () => {
     if (!user) return;
@@ -157,7 +173,6 @@ const modalRef = useRef(null);
     } catch (err) {}
   };
 
-  // 🔍 RECHERCHE
   useEffect(() => {
     if (!searchQ.trim() && searchWilaya === "all") {
       setSearchResults([]);
@@ -177,7 +192,6 @@ const modalRef = useRef(null);
     return () => clearTimeout(t);
   }, [searchQ, searchWilaya]);
 
-  // 🔔 NOTIFICATIONS — polling 5s
   useEffect(() => {
     if (!user) return;
     const fetchUnread = () => {
@@ -200,44 +214,40 @@ const modalRef = useRef(null);
       .catch(() => setNotifLoading(false));
   }, [notifOpen, user]);
 
- const markNotificationAsRead = async (notifId) => {
-  try {
-    await fetch(`/api/notifications/${notifId}/lu`, { method: "PATCH", headers: authHeaders() });
-    setNotifications(prev => prev.map(n => n._id === notifId ? { ...n, lu: true } : n));
-    setNotifUnread(prev => Math.max(0, prev - 1));
-  } catch (err) { 
-    console.error(err); 
-  }
-};
+  const markNotificationAsRead = async (notifId) => {
+    try {
+      await fetch(`/api/notifications/${notifId}/lu`, { method: "PATCH", headers: authHeaders() });
+      setNotifications(prev => prev.map(n => n._id === notifId ? { ...n, lu: true } : n));
+      setNotifUnread(prev => Math.max(0, prev - 1));
+    } catch (err) { 
+      console.error(err); 
+    }
+  };
 
-const markAllRead = async (e) => {
-  // ⚠️ Empêcher la propagation pour éviter la fermeture du panneau
-  if (e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-  
-  if (!user || notifUnread === 0) return;
-  
-  try {
-    await fetch(`/api/notifications/${user.username}/tout-lire`, { 
-      method: "PATCH", 
-      headers: authHeaders() 
-    });
+  const markAllRead = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
-    // Mettre à jour l'état local
-    setNotifUnread(0);
-    setNotifications(prev => prev.map(n => ({ ...n, lu: true })));
+    if (!user || notifUnread === 0) return;
     
-    // Optionnel : afficher un petit feedback
-    console.log("Toutes les notifications ont été marquées comme lues");
-    
-  } catch (err) { 
-    console.error("Erreur lors du marquage tout lu:", err); 
-  }
-};
+    try {
+      await fetch(`/api/notifications/${user.username}/tout-lire`, { 
+        method: "PATCH", 
+        headers: authHeaders() 
+      });
+      
+      setNotifUnread(0);
+      setNotifications(prev => prev.map(n => ({ ...n, lu: true })));
+      
+      console.log("Toutes les notifications ont été marquées comme lues");
+      
+    } catch (err) { 
+      console.error("Erreur lors du marquage tout lu:", err); 
+    }
+  };
 
-  // 💬 CHAT — polling 3s
   useEffect(() => {
     if (!chatOpen || !user) return;
     setLoading(true);
@@ -259,59 +269,53 @@ const markAllRead = async (e) => {
     const iv = setInterval(fetch_, 3000);
     return () => clearInterval(iv);
   }, [chatOpen, user, selectedConv?._id]);
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    // 🔥 IGNORER LES CLICS DANS LE PANNEAU MOBILE DES NOTIFICATIONS
-    const mobileNotifPanel = document.querySelector('.mobile-notif-panel');
-    if (mobileNotifPanel && mobileNotifPanel.contains(event.target)) {
-      return; // Ne rien faire si on clique dans le panneau mobile
-    }
-    
-    // 🔥 VÉRIFICATION : Si le clic est sur le bouton "Tout lire" ou ses descendants
-    const isOnMarkAllButton = event.target.closest('button')?.textContent?.includes('Tout') ||
-                               event.target.closest('[data-mark-all="true"]') !== null;
-    
-    if (isOnMarkAllButton) {
-      return;
-    }
-    
-    const isInsideProfile = profileRef.current?.contains(event.target);
-    const isInsideNotif = notifRef.current?.contains(event.target);
-    const isInsideChat = chatRef.current?.contains(event.target);
-    const isInsideModal = modalRef.current?.contains(event.target);
-    const isInsidePendingModal = document.getElementById('pending-modal')?.contains(event.target);
-    const isInsideZoomModal = document.getElementById('zoom-modal')?.contains(event.target);
 
-    if (isInsideModal || isInsidePendingModal || isInsideZoomModal) return;
-
-    if (!isInsideProfile) setProfileOpen(false);
-    if (!isInsideNotif) setNotifOpen(false);
-
-    if (!isInsideChat && pendingFiles.length === 0) {
-      setChatOpen(false);
-      setSelectedConv(null);
-    }
-  };
-
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, [pendingFiles.length]);
   useEffect(() => {
-    if (selectedConv) {
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    }
-  }, [selectedConv, selectedConv?.reponses?.length]);
+    const handleClickOutside = (event) => {
+      const mobileNotifPanel = document.querySelector('.mobile-notif-panel');
+      if (mobileNotifPanel && mobileNotifPanel.contains(event.target)) {
+        return;
+      }
+      
+      const isOnMarkAllButton = event.target.closest('button')?.textContent?.includes('Tout') ||
+                                 event.target.closest('[data-mark-all="true"]') !== null;
+      
+      if (isOnMarkAllButton) {
+        return;
+      }
+      
+      const isInsideProfile = profileRef.current?.contains(event.target);
+      const isInsideNotif = notifRef.current?.contains(event.target);
+      const isInsideChat = chatRef.current?.contains(event.target);
+      const isInsideModal = modalRef.current?.contains(event.target);
+      const isInsidePendingModal = document.getElementById('pending-modal')?.contains(event.target);
+      const isInsideZoomModal = document.getElementById('zoom-modal')?.contains(event.target);
+
+      if (isInsideModal || isInsidePendingModal || isInsideZoomModal) return;
+
+      if (!isInsideProfile) setProfileOpen(false);
+      if (!isInsideNotif) setNotifOpen(false);
+
+      if (!isInsideChat && pendingFiles.length === 0) {
+        setChatOpen(false);
+        setSelectedConv(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [pendingFiles.length]);
+
+  // SCROLL AUTOMATIQUE SUPPRIMÉ - plus de useEffect qui scroll
 
   useEffect(() => { setMobileMenuOpen(false); }, [location.pathname]);
 
- 
-
   const closeSearch = () => { setSearchOpen(false); setSearchQ(""); setSearchWilaya("all"); setSearchResults([]); setSearchHistory([]); };
 
-  const getOther     = (conv) => (!user ? "" : conv.de === user.username ? conv.a : conv.de);
-  const getInitials  = (name) => name?.slice(0, 2).toUpperCase() || "??";
+  const getOther = (conv) => (!user ? "" : conv.de === user.username ? conv.a : conv.de);
+  const getInitials = (name) => name?.slice(0, 2).toUpperCase() || "??";
 
   const formatDate = (date) => {
     const d = new Date(date), now = new Date();
@@ -340,19 +344,20 @@ useEffect(() => {
     setSelectedConv(conv);
     setReplyText("");
     setSelectedFiles([]);
+    setShowScrollButton(false); // Reset bouton quand on change de conversation
     if (!conv.lu && conv.a === user.username) {
       try {
         await fetch(`/api/messages/${conv._id}/lu`, { method: "PATCH", headers: authHeaders() });
         setConversations(prev => prev.map(c => c._id === conv._id ? { ...c, lu: true } : c));
       } catch (err) { console.error(err); }
     }
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
   };
 
-  // Envoie texte + fichiers + vocal
   const sendReply = async (audioFile = null, directFiles = null) => {
-    const textToSend   = replyText.trim();
-    const filesToSend  = directFiles ?? selectedFiles;
-    const hasText  = textToSend.length > 0;
+    const textToSend = replyText.trim();
+    const filesToSend = directFiles ?? selectedFiles;
+    const hasText = textToSend.length > 0;
     const hasFiles = filesToSend.length > 0;
     const hasAudio = !!audioFile;
     if (!hasText && !hasFiles && !hasAudio) return;
@@ -391,7 +396,7 @@ useEffect(() => {
         setSelectedConv(updated);
         setConversations(prev => prev.map(c => c._id === updated._id ? updated : c));
       }
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      // SCROLL AUTOMATIQUE SUPPRIMÉ
     } catch (err) {
       console.error("Erreur envoi:", err);
       if (!directFiles) {
@@ -403,7 +408,6 @@ useEffect(() => {
     }
   };
 
-  // Supprimer un message
   const deleteMessage = (replyIndex, isMain = false) => {
     if (!selectedConv) return;
     deleteNavTargetRef.current = { convId: selectedConv._id, replyIndex, isMain };
@@ -441,7 +445,6 @@ useEffect(() => {
     ];
   };
 
-  // Auto-mark messages as "vu"
   useEffect(() => {
     if (!selectedConv || !user) return;
     const thread = buildThread(selectedConv);
@@ -523,44 +526,44 @@ useEffect(() => {
         };
     }
   };
-  // Keep legacy helper for any place still using getNotificationIcon
+
   const getNotificationIcon = (type) => getNotificationMeta(type).icon;
 
- const getNotificationAction = (notif) => {
-  if (notif.type === "commentaire_annonce" && notif.postId) {
-    return () => { 
-      setNotifOpen(false); // Fermer le panneau mobile
-      setMobileMenuOpen(false); // Fermer aussi le menu mobile si ouvert
-      navigate(`/annonces/${notif.postId}`); 
-    };
-  }
-  if (notif.type === "commentaire_service" && notif.postId) {
+  const getNotificationAction = (notif) => {
+    if (notif.type === "commentaire_annonce" && notif.postId) {
+      return () => { 
+        setNotifOpen(false);
+        setMobileMenuOpen(false);
+        navigate(`/annonces/${notif.postId}`); 
+      };
+    }
+    if (notif.type === "commentaire_service" && notif.postId) {
+      return () => { 
+        setNotifOpen(false);
+        setMobileMenuOpen(false);
+        navigate(`/services/${notif.postId}`); 
+      };
+    }
+    if ((notif.type === "commentaire" || notif.type === "forum" || notif.type === "like") && notif.postId) {
+      return () => { 
+        setNotifOpen(false);
+        setMobileMenuOpen(false);
+        navigate("/forum"); 
+      };
+    }
+    if (notif.type === "message") { 
+      return () => { 
+        setNotifOpen(false);
+        setMobileMenuOpen(false);
+        setChatOpen(true); 
+      };
+    }
     return () => { 
       setNotifOpen(false);
       setMobileMenuOpen(false);
-      navigate(`/services/${notif.postId}`); 
+      navigate("/"); 
     };
-  }
-  if ((notif.type === "commentaire" || notif.type === "forum" || notif.type === "like") && notif.postId) {
-    return () => { 
-      setNotifOpen(false);
-      setMobileMenuOpen(false);
-      navigate("/forum"); 
-    };
-  }
-  if (notif.type === "message") { 
-    return () => { 
-      setNotifOpen(false);
-      setMobileMenuOpen(false);
-      setChatOpen(true); 
-    };
-  }
-  return () => { 
-    setNotifOpen(false);
-    setMobileMenuOpen(false);
-    navigate("/"); 
   };
-};
 
   const isAdmin = !!(user?.isAdmin || localStorage.getItem("adminToken"));
 
@@ -583,7 +586,6 @@ useEffect(() => {
 
   const NotificationsDropdown = () => (
     <div className="absolute right-0 top-12 w-[340px] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] z-[200] overflow-hidden" style={{ background: "#0A031E", border: "1px solid rgba(196,181,253,0.08)" }}>
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: "rgba(196,181,253,0.1)" }}>
@@ -630,24 +632,18 @@ useEffect(() => {
                 onClick={() => { markNotificationAsRead(notif._id); getNotificationAction(notif)(); setNotifOpen(false); }}
                 className={`flex gap-3 px-3 py-3 cursor-pointer transition-all border-b border-white/[0.04] hover:bg-white/[0.04] relative group ${!notif.lu ? "bg-[#C4B5FD]/[0.03]" : ""}`}
               >
-                {/* Unread left accent */}
                 {!notif.lu && (
                   <div className="absolute left-0 top-3 bottom-3 w-0.5 bg-[#8B5CF6]/60 rounded-full" />
                 )}
-
-                {/* Icon */}
                 <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${meta.gradient} flex items-center justify-center text-white flex-shrink-0 ${meta.glow}`}>
                   {meta.icon}
                 </div>
-
                 <div className="flex-1 min-w-0 pr-1">
                   <p className={`text-xs leading-relaxed ${!notif.lu ? "text-white font-medium" : "text-white/55"}`}>
                     {notif.message}
                   </p>
                   <p className="text-[10px] text-white/25 mt-1">{formatNotifTime(notif.createdAt)}</p>
                 </div>
-
-                {/* Unread dot */}
                 {!notif.lu && (
                   <div className="w-2 h-2 rounded-full bg-[#8B5CF6] flex-shrink-0 mt-1.5" />
                 )}
@@ -680,17 +676,13 @@ useEffect(() => {
         onCancel={() => setDeleteMessageConfirm(false)}
       />
 
-      {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 flex items-center justify-between px-2 sm:px-6 py-4 backdrop-blur-xl" style={{ background: "rgba(14,5,32,0.92)", borderBottom: "1px solid rgba(196,181,253,0.12)" }}>
-
+      <nav className="sticky top-0 z-50 flex items-center justify-between px-4 sm:px-8 py-4 backdrop-blur-xl" style={{ background: "rgba(14,5,32,0.92)", borderBottom: "1px solid rgba(196,181,253,0.12)" }}>
         <div className="flex items-center gap-2">
-          {/* Hamburger à gauche - mobile uniquement */}
           <div className="md:hidden">
             <button onClick={() => setMobileMenuOpen(true)} className="text-white text-2xl w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors">
               ☰
             </button>
           </div>
-          {/* Logo */}
           <div className="cursor-pointer flex items-center gap-2" onClick={() => navigate("/")}>
             <img src="/logo.png" alt="Sellekni" className="h-8 w-auto object-contain" />
             <span className="hidden sm:inline text-xl font-black text-[#C4B5FD] tracking-tight">Sellekni</span>
@@ -731,7 +723,6 @@ useEffect(() => {
         <div className="flex items-center gap-2 sm:gap-3">
           {user ? (
             <>
-              {/* 💬 CHAT */}
               <div className="relative chat-trigger">
                 <div className="md:hidden">
                   <button onClick={() => navigate("/messages")} className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-xl hover:bg-white/10 transition-colors">
@@ -746,13 +737,11 @@ useEffect(() => {
                 )}
               </div>
 
-              {/* 🔔 NOTIFS desktop */}
               <div className="relative hidden md:block" ref={notifRef}>
                 <BellIcon unreadCount={notifUnread} onClick={() => setNotifOpen(!notifOpen)} />
                 {notifOpen && <NotificationsDropdown />}
               </div>
 
-              {/* 👤 PROFIL */}
               <div className="relative" ref={profileRef}>
                 <div onClick={() => setProfileOpen(o => !o)} className="w-10 h-10 rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#C4B5FD] flex items-center justify-center text-white font-bold cursor-pointer relative overflow-hidden" style={{ border: "2px solid rgba(196,181,253,0.25)" }}>
                   {user.photo
@@ -803,7 +792,6 @@ useEffect(() => {
               <AuthBtn onClick={() => navigate("/signin")}>Inscription</AuthBtn>
             </>
           )}
-
         </div>
       </nav>
 
@@ -863,7 +851,7 @@ useEffect(() => {
         </>
       )}
 
-      {/* MODAL IOS — AJOUTER À L'ÉCRAN D'ACCUEIL */}
+      {/* MODAL IOS */}
       {iosInstallOpen && (
         <div className="fixed inset-0 z-[400] flex items-end justify-center md:hidden" onClick={() => setIosInstallOpen(false)}>
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -872,10 +860,7 @@ useEffect(() => {
             style={{ background: "#0A031E", border: "1px solid rgba(196,181,253,0.15)", borderBottom: "none" }}
             onClick={e => e.stopPropagation()}
           >
-            {/* Poignée */}
             <div className="w-10 h-1 rounded-full bg-white/20 mx-auto -mt-1" />
-
-            {/* En-tête */}
             <div className="flex items-center gap-3">
               <img src="/logo.png" alt="Sellekni" className="w-12 h-12 rounded-2xl" />
               <div>
@@ -884,12 +869,8 @@ useEffect(() => {
               </div>
               <button onClick={() => setIosInstallOpen(false)} className="ml-auto text-white/40 hover:text-white text-xl w-8 h-8 flex items-center justify-center">✕</button>
             </div>
-
             <div className="h-px bg-white/[0.07]" />
-
-            {/* Étapes */}
             <div className="flex flex-col gap-4">
-              {/* Étape 1 */}
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ background: "rgba(196,181,253,0.12)", color: "#C4B5FD" }}>1</div>
                 <div>
@@ -905,8 +886,6 @@ useEffect(() => {
                   </div>
                 </div>
               </div>
-
-              {/* Étape 2 */}
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ background: "rgba(196,181,253,0.12)", color: "#C4B5FD" }}>2</div>
                 <div>
@@ -923,8 +902,6 @@ useEffect(() => {
                   </div>
                 </div>
               </div>
-
-              {/* Étape 3 */}
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ background: "rgba(196,181,253,0.12)", color: "#C4B5FD" }}>3</div>
                 <div>
@@ -933,7 +910,6 @@ useEffect(() => {
                 </div>
               </div>
             </div>
-
             <button onClick={() => setIosInstallOpen(false)} className="auth-btn w-full mt-1">
               Compris !
             </button>
@@ -941,126 +917,115 @@ useEffect(() => {
         </div>
       )}
 
-{/* NOTIFS MOBILE */}
-{notifOpen && (
-  <div 
-    className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm md:hidden" 
-    onClick={(e) => {
-      if (e.target === e.currentTarget) {
-        setNotifOpen(false);
-      }
-    }}
-  >
-    <div 
-      className="mobile-notif-panel absolute right-0 top-0 bottom-0 w-full max-w-sm bg-[#0A031E] shadow-2xl overflow-y-auto" 
-      onClick={e => e.stopPropagation()}
-    >
-      <div className="sticky top-0 bg-[#0A031E] border-b border-white/10 p-4 flex justify-between items-center">
-        <span className="text-sm font-bold text-white">🔔 Notifications</span>
-        <button 
-          onClick={() => setNotifOpen(false)} 
-          className="text-white/50 text-xl hover:text-white transition-colors"
+      {/* NOTIFS MOBILE */}
+      {notifOpen && (
+        <div 
+          className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm md:hidden" 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setNotifOpen(false);
+            }
+          }}
         >
-          ✕
-        </button>
-      </div>
-      <div className="p-2">
-        {notifLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="w-5 h-5 border-2 border-white/20 border-t-[#8B5CF6] rounded-full animate-spin" />
-          </div>
-        ) : notifications.length === 0 ? (
-          <div className="text-center py-10">
-            <div className="text-3xl mb-2 opacity-30">🔔</div>
-            <p className="text-white/30 text-sm">Aucune notification</p>
-          </div>
-        ) : (
-          <>
-            {notifUnread > 0 && (
-              <div className="px-4 py-2 text-right">
-                <button 
-                  data-mark-all="true"  
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    markAllRead();
-                  }} 
-                  className="text-xs text-[#8B5CF6] hover:text-[#C4B5FD] transition-colors"
-                >
-                  Tout marquer comme lu
-                </button>
-              </div>
-            )}
-            {notifications.map(notif => {
-              const meta = getNotificationMeta(notif.type);
-              
-              return (
-                <div 
-                  key={notif._id}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    // Marquer comme lu sans attendre (fire and forget)
-                    if (!notif.lu) {
-                      fetch(`/api/notifications/${notif._id}/lu`, { 
-                        method: "PATCH", 
-                        headers: authHeaders() 
-                      }).catch(err => console.error(err));
-                      // Mettre à jour le compteur localement
-                      setNotifUnread(prev => Math.max(0, prev - 1));
-                    }
-                    
-                    // Fermer le panneau
-                    setNotifOpen(false);
-                    setMobileMenuOpen(false);
-                    
-                    // Navigation immédiate
-                    if (notif.type === "commentaire_annonce" && notif.postId) {
-                      navigate(`/annonces/${notif.postId}`);
-                    } else if (notif.type === "commentaire_service" && notif.postId) {
-                      navigate(`/services/${notif.postId}`);
-                    } else if ((notif.type === "commentaire" || notif.type === "forum" || notif.type === "like") && notif.postId) {
-                      navigate("/forum");
-                    } else if (notif.type === "message") {
-                      // Pour les messages, naviguer vers la page des messages sur mobile
-                      navigate("/messages");
-                    } else {
-                      navigate("/");
-                    }
-                  }}
-                  className={`flex gap-3 px-3 py-3 cursor-pointer transition-all border-b border-white/[0.04] hover:bg-white/[0.04] relative ${!notif.lu ? "bg-[#C4B5FD]/[0.03]" : ""}`}
-                >
-                  {/* Unread left accent */}
-                  {!notif.lu && (
-                    <div className="absolute left-0 top-3 bottom-3 w-0.5 bg-[#8B5CF6]/60 rounded-full" />
-                  )}
-
-                  {/* Icon */}
-                  <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${meta.gradient} flex items-center justify-center text-white flex-shrink-0 ${meta.glow}`}>
-                    {meta.icon}
-                  </div>
-
-                  <div className="flex-1 min-w-0 pr-1">
-                    <p className={`text-xs leading-relaxed ${!notif.lu ? "text-white font-medium" : "text-white/55"}`}>
-                      {notif.message}
-                    </p>
-                    <p className="text-[10px] text-white/25 mt-1">{formatNotifTime(notif.createdAt)}</p>
-                  </div>
-
-                  {/* Unread dot */}
-                  {!notif.lu && (
-                    <div className="w-2 h-2 rounded-full bg-[#8B5CF6] flex-shrink-0 mt-1.5" />
-                  )}
+          <div 
+            className="mobile-notif-panel absolute right-0 top-0 bottom-0 w-full max-w-sm bg-[#0A031E] shadow-2xl overflow-y-auto" 
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-[#0A031E] border-b border-white/10 p-4 flex justify-between items-center">
+              <span className="text-sm font-bold text-white">🔔 Notifications</span>
+              <button 
+                onClick={() => setNotifOpen(false)} 
+                className="text-white/50 text-xl hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-2">
+              {notifLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-5 h-5 border-2 border-white/20 border-t-[#8B5CF6] rounded-full animate-spin" />
                 </div>
-              );
-            })}
-          </>
-        )}
-      </div>
-    </div>
-  </div>
-)}
+              ) : notifications.length === 0 ? (
+                <div className="text-center py-10">
+                  <div className="text-3xl mb-2 opacity-30">🔔</div>
+                  <p className="text-white/30 text-sm">Aucune notification</p>
+                </div>
+              ) : (
+                <>
+                  {notifUnread > 0 && (
+                    <div className="px-4 py-2 text-right">
+                      <button 
+                        data-mark-all="true"  
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          markAllRead();
+                        }} 
+                        className="text-xs text-[#8B5CF6] hover:text-[#C4B5FD] transition-colors"
+                      >
+                        Tout marquer comme lu
+                      </button>
+                    </div>
+                  )}
+                  {notifications.map(notif => {
+                    const meta = getNotificationMeta(notif.type);
+                    
+                    return (
+                      <div 
+                        key={notif._id}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          
+                          if (!notif.lu) {
+                            fetch(`/api/notifications/${notif._id}/lu`, { 
+                              method: "PATCH", 
+                              headers: authHeaders() 
+                            }).catch(err => console.error(err));
+                            setNotifUnread(prev => Math.max(0, prev - 1));
+                          }
+                          
+                          setNotifOpen(false);
+                          setMobileMenuOpen(false);
+                          
+                          if (notif.type === "commentaire_annonce" && notif.postId) {
+                            navigate(`/annonces/${notif.postId}`);
+                          } else if (notif.type === "commentaire_service" && notif.postId) {
+                            navigate(`/services/${notif.postId}`);
+                          } else if ((notif.type === "commentaire" || notif.type === "forum" || notif.type === "like") && notif.postId) {
+                            navigate("/forum");
+                          } else if (notif.type === "message") {
+                            navigate("/messages");
+                          } else {
+                            navigate("/");
+                          }
+                        }}
+                        className={`flex gap-3 px-3 py-3 cursor-pointer transition-all border-b border-white/[0.04] hover:bg-white/[0.04] relative ${!notif.lu ? "bg-[#C4B5FD]/[0.03]" : ""}`}
+                      >
+                        {!notif.lu && (
+                          <div className="absolute left-0 top-3 bottom-3 w-0.5 bg-[#8B5CF6]/60 rounded-full" />
+                        )}
+                        <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${meta.gradient} flex items-center justify-center text-white flex-shrink-0 ${meta.glow}`}>
+                          {meta.icon}
+                        </div>
+                        <div className="flex-1 min-w-0 pr-1">
+                          <p className={`text-xs leading-relaxed ${!notif.lu ? "text-white font-medium" : "text-white/55"}`}>
+                            {notif.message}
+                          </p>
+                          <p className="text-[10px] text-white/25 mt-1">{formatNotifTime(notif.createdAt)}</p>
+                        </div>
+                        {!notif.lu && (
+                          <div className="w-2 h-2 rounded-full bg-[#8B5CF6] flex-shrink-0 mt-1.5" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL RECHERCHE */}
       {searchOpen && (
@@ -1087,7 +1052,6 @@ useEffect(() => {
               />
             </div>
             <div className="max-h-72 overflow-y-auto">
-              {/* HISTORIQUE (quand pas de recherche) */}
               {!searchQ.trim() && searchWilaya === "all" && (
                 <>
                   {historyLoading ? (
@@ -1133,7 +1097,6 @@ useEffect(() => {
                 </>
               )}
 
-              {/* RÉSULTATS DE RECHERCHE */}
               {(searchQ.trim() || searchWilaya !== "all") ? (
                 !searchLoading && searchResults.length === 0 ? (
                   <p className="text-center text-white/30 text-sm py-8">Aucun profil trouvé</p>
@@ -1194,61 +1157,61 @@ useEffect(() => {
         <div ref={chatRef} className="fixed top-0 right-0 w-full sm:w-[420px] h-full z-[100] flex flex-col"
           style={{ background: "linear-gradient(180deg,#07021A 0%,#0E0520 100%)", borderLeft: "1px solid rgba(196,181,253,0.12)", boxShadow: "-8px 0 40px rgba(0,0,0,0.5)" }}>
 
-         {/* Header */}
-        <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.06]"
-          style={{ background: "linear-gradient(135deg,rgba(45,16,105,0.2) 0%,rgba(14,5,32,0) 100%)", backdropFilter: "blur(12px)" }}>
-          {selectedConv ? (
-            <>
-              <button onClick={() => { setSelectedConv(null); setSelectedFiles([]); }}
-                className="w-8 h-8 rounded-xl hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all flex-shrink-0 text-base">
-                ←
-              </button>
-              <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg flex-shrink-0">
-                {selectedConv.otherUserPhoto ? (
-                  <img 
-                    src={selectedConv.otherUserPhoto} 
-                    alt={getOther(selectedConv)}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                      e.target.parentElement.innerHTML = getInitials(getOther(selectedConv));
-                      e.target.parentElement.classList.add("bg-gradient-to-br", "from-violet-600", "to-violet-700", "flex", "items-center", "justify-center", "text-sm", "font-black", "text-white");
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-violet-600 to-violet-700 flex items-center justify-center text-sm font-black text-white">
-                    {getInitials(getOther(selectedConv))}
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-white truncate leading-tight">{getOther(selectedConv)}</p>
-                {selectedConv.annonceTitre && (
-                  <p className="text-[10px] text-[#8B5CF6]/60 truncate leading-tight mt-0.5">📦 {selectedConv.annonceTitre}</p>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
-                style={{ background: "linear-gradient(135deg,rgba(196,181,253,0.25),rgba(219,39,119,0.15))", border: "1px solid rgba(196,181,253,0.25)" }}>
-                💬
-              </div>
-              <div className="flex-1">
-                <span className="font-bold text-white text-sm block">Messages</span>
-                {conversations.length > 0 && (
-                  <span className="text-[10px] text-white/30">{conversations.length} conversation{conversations.length > 1 ? "s" : ""}</span>
-                )}
-              </div>
-            </>
-          )}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <button onClick={() => { setChatOpen(false); navigate("/messages"); }}
-              className="w-8 h-8 rounded-xl hover:bg-white/10 flex items-center justify-center text-white/25 hover:text-white transition-all text-sm" title="Plein écran">⛶</button>
-            <button onClick={() => { setChatOpen(false); setSelectedConv(null); setSelectedFiles([]); }}
-              className="w-8 h-8 rounded-xl hover:bg-white/10 flex items-center justify-center text-white/25 hover:text-white transition-all text-lg">✕</button>
+          {/* Header */}
+          <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.06]"
+            style={{ background: "linear-gradient(135deg,rgba(45,16,105,0.2) 0%,rgba(14,5,32,0) 100%)", backdropFilter: "blur(12px)" }}>
+            {selectedConv ? (
+              <>
+                <button onClick={() => { setSelectedConv(null); setSelectedFiles([]); setShowScrollButton(false); }}
+                  className="w-8 h-8 rounded-xl hover:bg-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all flex-shrink-0 text-base">
+                  ←
+                </button>
+                <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg flex-shrink-0">
+                  {selectedConv.otherUserPhoto ? (
+                    <img 
+                      src={selectedConv.otherUserPhoto} 
+                      alt={getOther(selectedConv)}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        e.target.parentElement.innerHTML = getInitials(getOther(selectedConv));
+                        e.target.parentElement.classList.add("bg-gradient-to-br", "from-violet-600", "to-violet-700", "flex", "items-center", "justify-center", "text-sm", "font-black", "text-white");
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-violet-600 to-violet-700 flex items-center justify-center text-sm font-black text-white">
+                      {getInitials(getOther(selectedConv))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white truncate leading-tight">{getOther(selectedConv)}</p>
+                  {selectedConv.annonceTitre && (
+                    <p className="text-[10px] text-[#8B5CF6]/60 truncate leading-tight mt-0.5">📦 {selectedConv.annonceTitre}</p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+                  style={{ background: "linear-gradient(135deg,rgba(196,181,253,0.25),rgba(219,39,119,0.15))", border: "1px solid rgba(196,181,253,0.25)" }}>
+                  💬
+                </div>
+                <div className="flex-1">
+                  <span className="font-bold text-white text-sm block">Messages</span>
+                  {conversations.length > 0 && (
+                    <span className="text-[10px] text-white/30">{conversations.length} conversation{conversations.length > 1 ? "s" : ""}</span>
+                  )}
+                </div>
+              </>
+            )}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <button onClick={() => { setChatOpen(false); navigate("/messages"); }}
+                className="w-8 h-8 rounded-xl hover:bg-white/10 flex items-center justify-center text-white/25 hover:text-white transition-all text-sm" title="Plein écran">⛶</button>
+              <button onClick={() => { setChatOpen(false); setSelectedConv(null); setSelectedFiles([]); }}
+                className="w-8 h-8 rounded-xl hover:bg-white/10 flex items-center justify-center text-white/25 hover:text-white transition-all text-lg">✕</button>
+            </div>
           </div>
-        </div>
 
           {/* Contenu */}
           {!selectedConv ? (
@@ -1265,15 +1228,15 @@ useEffect(() => {
                 </div>
               ) : (
                 conversations.map((conv) => {
-                  const other    = getOther(conv);
+                  const other = getOther(conv);
                   const isUnread = !conv.lu && conv.a === user?.username;
-                  const lastMsg  = conv.reponses?.length > 0
+                  const lastMsg = conv.reponses?.length > 0
                     ? conv.reponses[conv.reponses.length - 1]
                     : { de: conv.de, message: conv.message, media: conv.media };
                   const lastText = lastMsg.message
                     || (lastMsg.media?.[0]?.type === "audio" ? "🎤 Message vocal"
                     :   lastMsg.media?.[0]?.type === "video" ? "🎬 Vidéo"
-                    :   lastMsg.media?.length               ? "📷 Photo" : "");
+                    :   lastMsg.media?.length ? "📷 Photo" : "");
                   return (
                     <div key={conv._id} onClick={() => openConversation(conv)}
                       className={`flex items-center gap-3 px-4 py-3.5 cursor-pointer transition-all duration-150 border-b border-white/[0.04] hover:bg-white/[0.04] ${isUnread ? "bg-violet-600/[0.07]" : ""}`}>
@@ -1320,20 +1283,23 @@ useEffect(() => {
               )}
             </div>
           ) : (
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-3"
+            <div className="flex-1 flex flex-col overflow-hidden relative">
+              {/* Messages avec ref pour détecter le scroll */}
+              <div 
+                ref={chatMessagesRef}
+                onScroll={handleChatScroll}
+                className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-3"
                 style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(196,181,253,0.15) transparent" }}>
                 {buildThread(selectedConv).map((msg, idx) => {
-                  const isMe      = msg.de === user?.username;
-                  const hasText   = msg.message?.trim().length > 0;
-                  const hasMedia  = msg.media?.length > 0;
-                  const hasAudio  = msg.media?.some(m => m.type === "audio");
+                  const isMe = msg.de === user?.username;
+                  const hasText = msg.message?.trim().length > 0;
+                  const hasMedia = msg.media?.length > 0;
+                  const hasAudio = msg.media?.some(m => m.type === "audio");
                   const photoOnly = hasMedia && !hasText && !hasAudio;
                   if (!hasText && !hasMedia) return null;
                   return (
                     <div key={idx} className={`group flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                       <div className="max-w-[82%]">
-                        {/* Photo-only: no bubble background */}
                         {photoOnly ? (
                           <div className={`flex flex-col gap-1 overflow-hidden rounded-2xl ${isMe ? "rounded-br-sm" : "rounded-bl-sm"}`}
                             style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.4)" }}>
@@ -1342,7 +1308,7 @@ useEffect(() => {
                                 <img key={mi} src={m.url} alt=""
                                   className="block w-full max-w-[240px] cursor-pointer hover:brightness-90 transition-all"
                                   onError={e => { e.currentTarget.style.display = "none"; }}
-                                 onClick={() => setZoomedImage(m.url)}
+                                  onClick={() => setZoomedImage(m.url)}
                                 />
                               );
                               if (m.type === "video") return (
@@ -1353,7 +1319,6 @@ useEffect(() => {
                             })}
                           </div>
                         ) : (
-                          /* Normal bubble */
                           <div className={`rounded-2xl text-sm leading-relaxed overflow-hidden ${
                             isMe
                               ? "bg-gradient-to-br from-violet-600 to-violet-700 text-white rounded-br-sm shadow-[0_4px_14px_rgba(196,181,253,0.3)]"
@@ -1412,6 +1377,19 @@ useEffect(() => {
                 <div ref={messagesEndRef} />
               </div>
 
+              {/* BOUTON FLOATING POUR DESCENDRE */}
+              {showScrollButton && (
+                <button
+                  onClick={scrollToBottomChat}
+                  className="absolute bottom-24 right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+                  style={{ background: "linear-gradient(135deg,#8B5CF6,#1F48B5)", boxShadow: "0 4px 20px rgba(139,92,246,0.5)" }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M19 12l-7 7-7-7"/>
+                  </svg>
+                </button>
+              )}
+
               {selectedFiles.length > 0 && (
                 <div className="flex-shrink-0 flex gap-2 px-4 py-2.5 border-t border-white/[0.06] overflow-x-auto"
                   style={{ background: "rgba(255,255,255,0.02)" }}>
@@ -1446,7 +1424,7 @@ useEffect(() => {
                       const files = Array.from(e.target.files || []);
                       e.target.value = "";
                       if (files.length === 0) return;
-                      setPendingFiles(files); // show confirmation
+                      setPendingFiles(files);
                     }}
                   />
                   <MediaUploadButton
@@ -1494,8 +1472,7 @@ useEffect(() => {
         </div>
       )}
 
-
-      {/* ── Photo send confirmation modal ── */}
+      {/* Photo send confirmation modal */}
       {pendingFiles.length > 0 && (
         <div 
           id="pending-modal"
@@ -1504,7 +1481,6 @@ useEffect(() => {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="w-full max-w-sm bg-[#08031D] border border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden">
-            {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
               <p className="text-sm font-bold text-white">
                 Envoyer {pendingFiles.length} fichier{pendingFiles.length > 1 ? "s" : ""} ?
@@ -1515,7 +1491,6 @@ useEffect(() => {
               </button>
             </div>
             
-            {/* Preview grid */}
             <div className="p-3 grid grid-cols-3 gap-2 max-h-52 overflow-y-auto">
               {pendingFiles.map((f, i) => (
                 <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-white/[0.05] border border-white/[0.07]">
@@ -1531,7 +1506,6 @@ useEffect(() => {
               ))}
             </div>
             
-            {/* Actions */}
             <div className="flex gap-2 px-4 py-3 border-t border-white/[0.07]">
               <button
                 onClick={() => setPendingFiles([])}
@@ -1557,10 +1531,11 @@ useEffect(() => {
         .animate-slide-in-left { animation: slideInLeft 0.3s ease-out; }
       `}</style>
       {location.pathname !== "/messages" && <AIChat />}
-            {/* Modal d'agrandissement d'image */}
+      
+      {/* Modal d'agrandissement d'image */}
       {zoomedImage && (
         <div 
-        id="zoom-modal" 
+          id="zoom-modal" 
           className="fixed inset-0 z-[600] flex items-center justify-center bg-black/90 backdrop-blur-md p-4"
           onClick={closeZoomModal}
         >
@@ -1571,7 +1546,6 @@ useEffect(() => {
               className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
             />
             <button
-             
               onClick={() => setZoomedImage(null)}
               className="absolute -top-12 right-0 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xl transition-all"
             >
@@ -1583,3 +1557,4 @@ useEffect(() => {
     </>
   );
 }
+
